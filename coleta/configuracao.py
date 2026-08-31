@@ -10,9 +10,11 @@ FIM = datetime(2026, 9, 1)
 
 # Os dados ficam na raiz do repositório, não ao lado do código: assim o
 # caminho não depende de onde o script foi disparado.
-RAIZ = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+RAIZ = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
-PASTA = os.path.join(RAIZ, "dados")             # versionado
+# dados/ é negado por padrão no .gitignore da raiz: só coordenação da coleta
+# (concluidas/, planos/), séries de mercado e derivados agregados sobem.
+PASTA = os.path.join(RAIZ, "dados")
 PASTA_BRUTO = os.path.join(PASTA, "bruto")
 PASTA_LEDGER = os.path.join(PASTA, "concluidas")
 PASTA_PLANOS = os.path.join(PASTA, "planos")

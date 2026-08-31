@@ -6,8 +6,8 @@ Rode célula a célula (# %%) ou o arquivo inteiro. A coleta é compartimentada:
 cada par (veículo, consulta) é gravado assim que termina e nunca é refeito, então
 pode interromper à vontade e rodar de novo.
 
-Mantenha o repositório privado: ele guarda título, linha fina e dois parágrafos
-de matérias de terceiros.
+O texto das matérias (dados/bruto/, dados/noticias.csv) fica fora do Git — o
+.gitignore da raiz nega dados/ por padrão. Ver a regra de dados no README.
 """
 
 import os
