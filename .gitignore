@@ -1,0 +1,44 @@
+# ─── Dados ───────────────────────────────────────────────────────────────
+# Regra: NEGAR por padrão dentro de dados/, liberar só o que pode ser
+# publicado. O corpus guarda título, linha fina e parágrafos de matérias de
+# terceiros — redistribuir isso esbarra em direito autoral e nos termos de
+# uso dos veículos, e o repositório pode se tornar público a qualquer
+# momento (por engano ou de propósito, na publicação do paper).
+dados/*
+
+# Liberados: coordenação da coleta (só chaves de consulta, sem texto) —
+# é o que permite dois colaboradores não repetirem trabalho.
+!dados/concluidas/
+!dados/planos/
+
+# Liberados: séries numéricas públicas (B3/ANBIMA/BCB), sem texto de terceiros.
+!dados/mercado/
+
+# Liberados: derivados agregados que não permitem reconstruir os textos
+# (índice mensal, bandas, contagens). É o que vai junto com o paper.
+!dados/derivados/
+
+# Bloqueados explicitamente, mesmo que alguém libere um pai acima:
+dados/bruto/
+dados/noticias.csv
+dados/noticias.xlsx
+dados/llm/
+**/corpus*.parquet
+**/corpus*.csv
+
+# ─── Segredos ────────────────────────────────────────────────────────────
+.env
+.env.*
+*.key
+credenciais*.json
+
+# ─── Cache e ambiente ────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+venv/
+env/
+.DS_Store
+*.log
+.pytest_cache/

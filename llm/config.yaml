@@ -1,0 +1,86 @@
+# Configuração central — índice de credibilidade BCB (v1.0)
+# Trocar de modelo = editar aqui + registrar em produção como potencial quebra
+# estrutural (janela de sobreposição obrigatória).
+
+prompt_version: "v1.0"
+
+# Caminhos relativos a llm/. Tudo que contém texto de terceiros vive em
+# dados/ na raiz do repositório, que NÃO é versionado (ver .gitignore).
+paths:
+  corpus_coleta: ../dados/noticias.csv   # saída de consolidar() (coleta/pipeline.py)
+  corpus: ../dados/llm/corpus.parquet    # saída de corpus/from_coleta.py
+  cache_dir: ../dados/llm/cache
+  scores_dir: ../dados/llm/scores
+  pilot_dir: ../dados/llm/piloto
+  sinteticos_t5: fixtures/sinteticos_T5.csv   # sintético, versionado
+
+# Mapa veículo -> tipo_veiculo. Qualquer veículo ausente entra como imprensa.
+# Quando o corpus de research (sell-side/buy-side) entrar, listar aqui.
+veiculos_tipo:
+  Valor: imprensa
+  Poder360: imprensa
+  Folha: imprensa
+  Estadão: imprensa
+  Reuters: imprensa
+
+# --- Provedores (free-first; limites de 17/08/2026 — conferir no console) ---
+providers:
+  gemini_flash_lite:
+    kind: gemini
+    model: gemini-2.5-flash-lite       # conferir modelo free vigente no AI Studio
+    api_key_env: GEMINI_API_KEY
+    rpm: 10                            # margem sob o teto free (~15 RPM)
+    thinking_budget: 0                 # 2.5: pensamento consumiria max_tokens
+    rpd: 900                           # margem sob o teto free (~1000–1500 RPD)
+  sabia:
+    kind: openai_compat
+    base_url: https://chat.maritaca.ai/api
+    model: sabia-4                     # ajustar conforme créditos acadêmicos concedidos
+    api_key_env: MARITACA_API_KEY
+    rpm: 20
+    rpd: 50000
+  groq_llama:
+    kind: openai_compat
+    base_url: https://api.groq.com/openai/v1
+    model: llama-3.3-70b-versatile     # open-weights; ponto 3 da fronteira custo-qualidade
+    api_key_env: GROQ_API_KEY
+    rpm: 20
+    rpd: 800
+
+request:
+  temperature: 0.0
+  max_tokens: 300
+  timeout_s: 60
+  max_retries: 5
+
+# --- Piloto (Etapa 2) ---
+pilot:
+  n_itens: 50
+  seed: 42
+  # Estratos temporais (episódios de tensão + calmaria). Ajustar à cobertura do corpus.
+  strata:
+    - {label: "2002-03 eleicao/transicao",        start: "2002-01-01", end: "2003-12-31", n: 8}
+    - {label: "2008-09 crise global",             start: "2008-06-01", end: "2009-12-31", n: 8}
+    - {label: "2013-16 fiscal/impeachment",       start: "2013-01-01", end: "2016-12-31", n: 9}
+    - {label: "2020-21 covid",                    start: "2020-03-01", end: "2021-12-31", n: 8}
+    - {label: "2022-24 aperto/tensao politica",   start: "2022-01-01", end: "2024-12-31", n: 9}
+    - {label: "calmaria 2006-07 e 2017-19",       start: "2006-01-01", end: "2019-12-31", n: 8,
+       windows: [["2006-01-01","2007-12-31"], ["2017-01-01","2019-12-31"]]}
+  n_validacao_filtro: 10   # itens extras (procedurais/limítrofes) só p/ validar o filtro de relevância
+
+# --- Anonimização (T3 e treino do encoder local) ---
+anonimizacao:
+  autoridades_bc:
+    [Armínio Fraga, Arminio Fraga, Armínio, Arminio, Fraga, Henrique Meirelles,
+     Meirelles, Alexandre Tombini, Ilan Goldfajn, Ilan,
+     Tombini, Goldfajn, Roberto Campos Neto, Campos Neto,
+     Gabriel Galípolo, Galípolo, Galipolo]
+  # Máscara é case-sensitive com fronteira de palavra (evita o verbo
+  # 'temer'). Meirelles fica em autoridades_bc mesmo na era Fazenda
+  # (2016-18): o rótulo sai semanticamente impreciso, mas a identidade —
+  # que é o que o T3 esconde — fica mascarada do mesmo jeito.
+  politicos:
+    [Fernando Henrique, FHC, Lula, Dilma Rousseff, Dilma, Michel Temer, Temer,
+     Jair Bolsonaro, Bolsonaro, Pedro Malan, Malan, Antonio Palocci, Palocci,
+     Guido Mantega, Mantega, Joaquim Levy, Nelson Barbosa, Paulo Guedes,
+     Guedes, Fernando Haddad, Haddad]

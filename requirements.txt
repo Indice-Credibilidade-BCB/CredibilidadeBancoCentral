@@ -1,5 +1,4 @@
-requests
-pandas
-beautifulsoup4
-lxml
-matplotlib
+# Dependências de todo o projeto. Para trabalhar em uma parte só, use o
+# requirements.txt da pasta correspondente (coleta/, llm/).
+-r coleta/requirements.txt
+-r llm/requirements.txt

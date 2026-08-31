@@ -1,67 +1,65 @@
-# Credibilidade do Banco Central
+# Índice de Credibilidade do Banco Central do Brasil
 
-Base para quantificar a percepção pública sobre a atuação do Banco Central.
+Projeto de pesquisa (Iniciação Científica, FEA-USP) que constrói um índice de
+credibilidade do BCB extraído por LLM da **percepção de terceiros** (imprensa e
+research) e o testa em duas frentes: se rastreia a credibilidade latente
+implícita em expectativas e preços (**validade**) e se explica a heterogeneidade
+na transmissão de choques de política monetária (**utilidade**).
 
-## Estrutura
+O desenho completo — pergunta de pesquisa, sistema de equações (Blocos 1–6),
+ressalvas metodológicas e plano de publicação — está em
+[`docs/CONTEXTO_Projeto_Indice_Credibilidade_BCB.md`](docs/CONTEXTO_Projeto_Indice_Credibilidade_BCB.md).
 
-    source/scrappingDI.py       swap DI por vértice, via SGS do BCB
-    source/extracaoNoticias/    coleta de notícias sobre política monetária
-    dados/bruto/                registros crus, um arquivo por veículo por pessoa
-    dados/concluidas/           o que cada pessoa já varreu
-    dados/planos/               partições planejadas por veículo (compartilhado)
-    dados/noticias.csv          base consolidada (gerada por consolidar())
-    dados/para_llm.jsonl        mesma base, sem replicação de agência
+## Mapa do repositório
 
-## Extração de notícias
+| Pasta | Etapa | O que é |
+|---|---|---|
+| [`coleta/`](coleta/) | 0 | Scraping do corpus de imprensa (busca da Globo + WordPress). Modular, multi-colaborador. |
+| [`mercado/`](mercado/) | 0 | Séries de mercado: curva DI, ETTJ, breakeven, CDS. |
+| [`llm/`](llm/) | 1–3 | Índice $\hat{C}^{LLM}_t$: prompts, provedores, piloto de anotação, bateria anti-vazamento, agregação. |
+| [`validacao/`](validacao/) | 4 | Kalman ($\hat{C}^{KF}_t$) e encompassing contra rivais → **Paper 1**. |
+| [`modelo/`](modelo/) | 5–7 | NK de 3 equações, projeções locais (Jordà), contrafactuais → **Paper 2**. |
+| [`docs/`](docs/) | — | Contexto, decisões travadas, guia de anotação, auditorias. |
+| `dados/` | — | **Não versionado** (ver abaixo). Criado localmente por quem roda. |
 
-Pipeline em `source/extracaoNoticias/`, dividido por etapa:
+As pastas usam nomes importáveis em Python (sem prefixo numérico) porque os
+módulos se importam entre si; a correspondência com as Etapas está na tabela.
 
-    configuracao.py   período, termos, veículos, calendário do Copom
-    utilitarios.py    log, normalização sem acento, filtro temático
-    transporte.py     sessão HTTP, busca da Globo, leitura do Elasticsearch
-    extracao.py       do JSON cru ao registro (título, linha fina, p1, p2)
-    sondagem.py       quem é Faixa A; mede o tamanho de cada consulta
-    planejamento.py   subdivide consultas que estouram o teto de paginação
-    varredura.py      percorre uma consulta até o fim (globo e wordpress)
-    armazenamento.py  arquivos brutos e registro de consultas concluídas
-    sincronizacao.py  pull no início, push a cada 5 consultas
-    pipeline.py       coletarTudo() e consolidar()
-    diagnostico.py    cobertura mensal, teste do Copom, relatório
-    main.py           o roteiro, em células `# %%`
+## Regra de dados (leia antes do primeiro push)
 
-### Como rodar
+O corpus guarda título, linha fina e os dois primeiros parágrafos de matérias
+de terceiros. **Isso não vai para o Git.** O `.gitignore` nega tudo dentro de
+`dados/` e libera só o que pode ser publicado:
 
-1. `pip install -r requirements.txt`
-2. Em `main.py`, troque o nome em `cfg.definirColaborador("enzo")` — ou defina
-   a variável de ambiente `COLETA_USER`.
-3. Rode `main.py` inteiro ou célula a célula.
+- ✅ `dados/concluidas/`, `dados/planos/` — coordenação da coleta, só chaves de
+  consulta. É o que faz dois colaboradores não repetirem trabalho.
+- ✅ `dados/mercado/` — séries numéricas públicas (B3/ANBIMA/BCB).
+- ✅ `dados/derivados/` — índice mensal, bandas, contagens: agregados que não
+  permitem reconstruir os textos. É o que acompanha o paper.
+- ❌ `dados/bruto/`, `dados/noticias.csv`, `dados/llm/` — texto de terceiros.
 
-Só entram na coleta os veículos de **Faixa A**: aqueles cuja API devolve título,
-linha fina e corpo na mesma requisição da descoberta, sem precisar baixar a
-página do artigo. Quem é Faixa A é decidido por `sondarVeiculos()`, não por
-suposição.
+Se o repositório for público, isso é obrigatório. Se for privado, continua
+sendo a postura certa: um repositório muda de visibilidade com dois cliques, e
+o histórico do Git não esquece.
 
-O motor da Globo trava em `from=10.000`, então cada termo que não alcança o
-início da série é subdividido cruzando com os presidentes do BC — que recortam
-o período por época. Os presidentes são apenas divisores: não entram na
-definição do corpus, dada só pelos termos temáticos.
+## Começando
 
-### Trabalho em grupo
+```bash
+git clone https://github.com/Indice-Credibilidade-BCB/CredibilidadeBancoCentral.git
+cd CredibilidadeBancoCentral
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt          # ou o requirements.txt da pasta que for usar
+```
 
-Cada pessoa grava nos próprios arquivos (`dados/bruto/<veiculo>__<pessoa>.jsonl`),
-então ninguém sobrescreve o trabalho de ninguém. O registro de consultas
-concluídas é compartilhado: o que um já coletou, o outro pula. A sincronização
-com o repositório é automática — `pull` no início, `push` a cada 5 consultas.
+Fluxo de ponta a ponta:
 
-Se forem coletar ao mesmo tempo, dividam os termos antes com
-`dividirTrabalho(["enzo", "amigo"])`. Em horários diferentes não precisa.
+```bash
+# 1) Coletar (cada pessoa nos próprios arquivos) — ver coleta/README.md
+cd coleta && python main.py       # ou célula a célula (# %%); consolidar()
+                                  # gera dados/noticias.csv e dados/para_llm.jsonl
 
-A coleta é compartimentada: cada par (veículo, consulta) é gravado assim que
-termina e nunca é refeito. Pode interromper e retomar quantas vezes quiser.
-
-## Aviso
-
-O repositório armazena título, linha fina e os dois primeiros parágrafos de
-matérias de terceiros. Mantenha o repositório **privado**: redistribuir texto
-jornalístico publicamente esbarra em direito autoral e nos termos de uso dos
-veículos.
+# 2) Converter para o schema do índice e rodar o piloto — ver llm/README.md
+cd ../llm
+python corpus/from_coleta.py
+python sample_pilot.py
+```
