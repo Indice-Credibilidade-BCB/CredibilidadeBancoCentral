@@ -7,11 +7,16 @@ sys.path.insert(0, str(pathlib.Path(__file__).parent.parent))
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from reliability import kappa_quadratico, alpha_krippendorff_ordinal
 from diagnostics.leakage import anonimizar, comparar_variantes, teste_sinteticos
 import aggregate
 import schema
+
+# teste_sinteticos é função do pipeline, não um caso de teste — o nome casa
+# com o padrão de coleta do pytest, que tentaria preencher df como fixture.
+teste_sinteticos.__test__ = False
 
 
 def test_kappa():
@@ -26,7 +31,9 @@ def test_kappa():
 
 
 def test_alpha_vs_pacote():
-    import krippendorff as kd
+    # dev/validação apenas (comentado no requirements.txt): sem o pacote de
+    # referência instalado, pula em vez de falhar.
+    kd = pytest.importorskip("krippendorff")
     rng = np.random.default_rng(0)
     for _ in range(5):
         a = rng.integers(1, 6, 40).astype(float)
