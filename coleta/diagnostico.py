@@ -45,25 +45,25 @@ def testeCopom(dataframe: pd.DataFrame) -> pd.DataFrame:
 # %% Relatório
 
 def relatorio(dataframe: pd.DataFrame) -> pd.DataFrame:
-    print("\n" + "═" * 76)
+    print("\n" + "=" * 76)
     print("VOLUME POR VEÍCULO E ANO")
-    print("═" * 76)
+    print("=" * 76)
     print(dataframe.assign(ano=dataframe["data"].dt.year).pivot_table(
         index="ano", columns="veiculo", values="url", aggfunc="size",
         fill_value=0).to_string())
 
-    print("\n" + "═" * 76)
+    print("\n" + "=" * 76)
     print("COMPLETUDE E CUSTO")
-    print("═" * 76)
+    print("=" * 76)
     for v, g in dataframe.groupby("veiculo"):
         req = CONTADOR.get(v, 0)
         taxa = f"{req / len(g):.2f}" if len(g) else "—"
         print(f"  {v:16} n={len(g):6} | subtítulo={g['subtitulo'].notna().mean():.2f}"
               f" | p2={g['p2'].notna().mean():.2f} | {req} req ({taxa} req/notícia)")
 
-    print("\n" + "═" * 76)
+    print("\n" + "=" * 76)
     print("COBERTURA DO COPOM (anos com calendário conferido)")
-    print("═" * 76)
+    print("=" * 76)
     testeCopom(dataframe)
     return dataframe
 

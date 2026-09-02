@@ -3,6 +3,7 @@
 import json
 import os
 import re
+from datetime import datetime
 
 import pandas as pd
 
@@ -10,7 +11,7 @@ import configuracao as cfg
 from armazenamento import carregarFeitas, gravar, marcarFeita
 from planejamento import planejar
 from sincronizacao import gitEnviar, gitPuxar
-from utilitarios import log, norm, slug
+from utilitarios import desembrulharUrl, log, norm, slug
 from varredura import varrerGlobo, varrerWp
 
 # %% Divisão do trabalho
@@ -25,7 +26,7 @@ def dividirTrabalho(pessoas, termos=None) -> dict:
     for i, t in enumerate(termos):
         lotes[pessoas[i % len(pessoas)]].append(t)
     for p, ts in lotes.items():
-        print(f"  {p:12} → {ts}")
+        print(f"  {p:12} -> {ts}")
     return lotes
 
 # %% Coleta
@@ -67,7 +68,16 @@ def coletarTudo(veiculos=None, termos=None, ini=None, fim=None, sondagem=None,
             plano = planejar(nome, conf["tenant"], termos, ini, fim, max_prof,
                              usarCache=not replanejar)
             for _, linha in plano[plano["usar"]].iterrows():
-                chave = f"{nome}||{linha['consulta']}"
+                # A chave PRECISA incluir a janela de datas: o texto da
+                # consulta (ex.: "Selic Tombini") se repete entre rodadas
+                # com ini/fim diferentes (backfill de outro período), e sem
+                # a janela aqui a segunda rodada pula a consulta inteira
+                # pensando que já foi feita — vazio silencioso (visto na
+                # prática: Valor não coletou nada numa rodada de backfill
+                # porque as mesmas consultas por presidente já estavam no
+                # ledger da rodada anterior). O motor wordpress já inclui o
+                # ano na chave por outro motivo e não tem esse problema.
+                chave = f"{nome}||{linha['consulta']}||{ini:%Y%m%d}-{fim:%Y%m%d}"
                 if chave in feitas:
                     continue
                 registros, info = varrerGlobo(linha["consulta"], nome,
@@ -85,6 +95,18 @@ def coletarTudo(veiculos=None, termos=None, ini=None, fim=None, sondagem=None,
         else:
             for termo in termos:
                 for ano in range(ini.year, fim.year + 1):
+                    # Ano de borda (ex.: fim=2020-01-01 inclui ano=2020 no
+                    # range, mas a fatia real [max(ano,ini), min(ano+1,fim))
+                    # fica vazia): NÃO marcar o ledger como feito. Sem esta
+                    # guarda, uma rodada FUTURA cuja janela desloque esse
+                    # mesmo ano para dentro do intervalo útil pula ele
+                    # pensando que já foi coletado — vazio silencioso (visto
+                    # na prática: InfoMoney/Money Times/Poder360 perderam
+                    # 2020 inteiro numa rodada de backfill por causa disso).
+                    a = max(datetime(ano, 1, 1), ini)
+                    b = min(datetime(ano + 1, 1, 1), fim)
+                    if a >= b:
+                        continue
                     chave = f"{nome}||{termo}||{ano}"
                     if chave in feitas:
                         continue
@@ -134,6 +156,14 @@ def consolidar(exigirP2=True, puxar=True) -> pd.DataFrame:
     dataframe = pd.DataFrame(registros)
     n0 = len(dataframe)
 
+    # A busca da Globo devolve um REDIRECIONADOR de clique
+    # (measures.globo.com/v1/click?...&u=<url real>) cujo path é idêntico
+    # para toda matéria — normalizar sem desembrulhar primeiro colapsaria
+    # TODO o veículo num único chave_url (visto na prática: reduziu 5.262
+    # brutos da Valor a 1 registro). Desembrulha ANTES de normalizar, e
+    # substitui `url` pela URL real: o link de tracking expira e não serve
+    # para citar a fonte no paper nem para reauditar o item depois.
+    dataframe["url"] = dataframe["url"].map(desembrulharUrl)
     # a mesma notícia chega por várias consultas — dedup por URL normalizada
     dataframe["chave_url"] = (dataframe["url"].astype(str)
                               .str.replace(r"[?#].*$", "", regex=True)
@@ -182,7 +212,7 @@ def consolidar(exigirP2=True, puxar=True) -> pd.DataFrame:
                                 "data": r["data"].strftime("%Y-%m-%d"),
                                 "url": r["url"], "texto": r["texto_llm"]},
                                ensure_ascii=False) + "\n")
-    print(f"{n0} brutos → {len(dataframe)} após dedup e filtros → "
+    print(f"{n0} brutos -> {len(dataframe)} após dedup e filtros -> "
           f"{len(unicas)} sem replicação de agência")
     gitEnviar("consolidação da base")
     return dataframe
