@@ -3,6 +3,10 @@ numpy>=1.24
 requests>=2.31
 pyyaml>=6.0
 pyarrow>=14.0
+anthropic>=1.0        # provedor claude (providers/anthropic_provider.py)
+scipy
 # dev/validação apenas:
 # krippendorff
-scipy
+# braço local D7/D14 (llm/local_encoder/): pesado, opcional
+# torch>=2.0
+# transformers>=4.40

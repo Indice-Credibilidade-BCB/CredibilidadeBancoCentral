@@ -31,8 +31,10 @@ class ProviderBase(abc.ABC):
 
 
 def make_provider(name: str, cfg: dict, request_cfg: dict) -> ProviderBase:
+    from .anthropic_provider import AnthropicProvider
     from .gemini import GeminiProvider
     from .openai_compat import OpenAICompatProvider
 
-    kinds = {"gemini": GeminiProvider, "openai_compat": OpenAICompatProvider}
+    kinds = {"gemini": GeminiProvider, "openai_compat": OpenAICompatProvider,
+             "anthropic": AnthropicProvider}
     return kinds[cfg["kind"]](name, cfg, request_cfg)

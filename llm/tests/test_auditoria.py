@@ -120,6 +120,22 @@ def test_parser_float_integral():
     assert scorer.parse_json_resposta('{"d1": true}') is None
 
 
+def test_parser_d1_nulo_vira_neutro():
+    """Achado real rodando o Sabiá (01/09/2026): o provedor às vezes devolve
+    d1=null (em vez de 3) quando não vê menção ao BCB/meta. D1 nunca deveria
+    ser nulo (D4); coagir para 3 evita perder ~40% dos itens como
+    'parse_falhou' só porque o provedor não seguiu a instrução à risca."""
+    ok = scorer.parse_json_resposta(
+        '{"d1": null, "d2": null, "d2_sem_sinal": true, "d3": 3, "d3_sem_sinal": false}')
+    assert ok["d1"] == 3
+    assert ok["d3"] == 3
+    # d1 ausente da resposta (não só null) tem que cair na mesma regra
+    ok2 = scorer.parse_json_resposta('{"d2": 2}')
+    assert ok2["d1"] == 3
+    # mas d1 fora da escala (resposta de fato garbled) continua falha real
+    assert scorer.parse_json_resposta('{"d1": 7}') is None
+
+
 def test_scorer_variante_inclui_modo():
     k1 = scorer.cache_key("p", "m", "i", "piloto|real|nenhuma")
     k2 = scorer.cache_key("p", "m", "i", "producao|real|nenhuma")
@@ -149,6 +165,7 @@ if __name__ == "__main__":
     test_relatorio_coercao(); print("relatório com coerção OK")
     test_halo_regra(); print("regra de halo OK")
     test_parser_float_integral(); print("parser float integral OK")
+    test_parser_d1_nulo_vira_neutro(); print("parser d1 nulo -> neutro OK")
     test_scorer_variante_inclui_modo(); print("variante inclui modo OK")
     test_carregar_scores_dedup(); print("dedup de retomada OK")
     print("AUDITORIA: TODOS OS TESTES PASSARAM")

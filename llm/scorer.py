@@ -61,9 +61,20 @@ def parse_json_resposta(texto: str) -> dict | None:
             v = int(v)
         return v if isinstance(v, int) and 1 <= v <= 5 else None
 
-    obj["d1"] = _nota(obj.get("d1"))
-    if obj["d1"] is None:
-        return None
+    d1_bruto = obj.get("d1")
+    if d1_bruto is None:
+        # D1 nunca deveria ser nulo (D4: corpus já filtrado por relevância;
+        # "sem sinal claro" já tem representação própria — nota 3). Na
+        # prática, o Sabiá às vezes devolve d1=null mesmo assim quando não
+        # vê nenhuma menção ao BCB/meta no texto (visto na pontuação-piloto:
+        # ~40% dos itens numa amostra pequena). Em vez de descartar o item
+        # inteiro como falha de parse — perdendo o dado e gastando retry —
+        # trata como o "3 = neutro" que o próprio prompt já define.
+        obj["d1"] = 3
+    else:
+        obj["d1"] = _nota(d1_bruto)
+        if obj["d1"] is None:
+            return None
     for k in ("d2", "d3"):
         obj[k] = _nota(obj.get(k))
     return obj
@@ -101,8 +112,81 @@ class RateLimiter:
         return True
 
 
+def _carregar_ja_feitos(out: pathlib.Path) -> set:
+    """Retomada: só pula itens que já têm escore VÁLIDO; linhas com erro
+    (parse_falhou, exceção de rede) são reprocessadas na reexecução."""
+    ja_feitos = set()
+    if out.exists():
+        for line in out.read_text(encoding="utf-8").splitlines():
+            try:
+                rec = json.loads(line)
+                if rec.get("erro") is None and rec.get("d1") is not None:
+                    ja_feitos.add(rec["cache_key"])
+            except (json.JSONDecodeError, KeyError):
+                pass
+    return ja_feitos
+
+
+def _rodar_passada(df: pd.DataFrame, cfg: dict, provider, provider_name: str,
+                   system: str, date_mode: str, variante: str,
+                   variante_vazamento: str | None, limiter: "RateLimiter",
+                   ja_feitos: set, out_handle) -> bool:
+    """Roda uma passada de pontuação (um valor de anonimização) sobre `df`,
+    já mascarado como esta passada exige. Retorna False se o teto diário foi
+    atingido no meio da passada (chamador deve encerrar)."""
+    for _, row in df.iterrows():
+        ck = cache_key(provider_name, provider.model, str(row["item_id"]), variante)
+        if ck in ja_feitos:
+            continue
+        if not limiter.acquire():
+            print("Teto diário (RPD) atingido — retome amanhã com o mesmo comando.")
+            return False
+        user = prompts.build_user_msg(row.to_dict(), date_mode=date_mode,
+                                      data_falsa=row.get("data_falsa"))
+        texto, erro = None, None
+        for tent in range(cfg["request"].get("max_retries", 5)):
+            try:
+                texto = provider.complete(system, user)
+                break
+            except Exception as e:  # noqa: BLE001 — backoff genérico p/ 429/5xx
+                erro = str(e)
+                time.sleep(min(2 ** tent * 5, 120))
+        parsed = parse_json_resposta(texto) if texto else None
+        rec = {
+            "cache_key": ck,
+            "item_id": row["item_id"],
+            "provider": provider_name,
+            "model": provider.model,
+            "prompt_version": prompts.PROMPT_VERSION,
+            "prompt_hash": prompts.PROMPT_HASH,  # D13: congelamento verificável
+            "variante": variante,
+            "variante_vazamento": variante_vazamento,  # "vmax"/"vmin"/None (D12)
+            "ts": dt.datetime.now().isoformat(timespec="seconds"),
+            "raw": texto,
+            "erro": None if parsed else (erro or "parse_falhou"),
+            **{k: (parsed or {}).get(k) for k in
+               ("d1", "d2", "d3", "d2_sem_sinal", "d3_sem_sinal", "justificativa")},
+        }
+        out_handle.write(json.dumps(rec, ensure_ascii=False) + "\n")
+        out_handle.flush()
+        ja_feitos.add(ck)
+    return True
+
+
 def score_batch(provider_name: str, input_path: str, mode: str, out_path: str,
-                date_mode: str = "real", anonimizacao: str = "nenhuma") -> None:
+                date_mode: str = "real", anonimizacao: str = "nenhuma",
+                dupla_vmax_vmin: bool = False, nivel_vmin: str = "L2") -> None:
+    """Pontua o corpus. `dupla_vmax_vmin` (D12/pendência 5) roda CADA item
+    duas vezes na mesma passagem — uma com `anonimizacao` (V-max, tipicamente
+    "nenhuma": texto integral) e outra forçada no `nivel_vmin` (o nível
+    mínimo que T0 comprovou cegar o modelo, ver t0_probe.py) — e grava as
+    duas no mesmo arquivo, distinguidas por sufixo `|vmax`/`|vmin` na chave
+    de cache e pelo campo `variante_vazamento`. `aggregate.py` separa as duas
+    séries e publica Δt = c_llm_vmax - c_llm_vmin. Dobra as chamadas de API;
+    custo é irrelevante mesmo para o corpus inteiro (D5).
+    Sem `dupla_vmax_vmin` (uso normal fora do diagnóstico de vazamento), o
+    comportamento e a chave de cache são IDÊNTICOS aos de antes — não invalida
+    cache já coletado."""
     cfg = load_cfg()
     pcfg = cfg["providers"][provider_name]
     provider = make_provider(provider_name, pcfg, cfg["request"])
@@ -116,62 +200,29 @@ def score_batch(provider_name: str, input_path: str, mode: str, out_path: str,
 
     out = pathlib.Path(out_path)
     out.parent.mkdir(parents=True, exist_ok=True)
-    # Retomada: só pula itens que já têm escore VÁLIDO; linhas com erro
-    # (parse_falhou, exceção de rede) são reprocessadas na reexecução.
-    ja_feitos = set()
-    if out.exists():
-        for line in out.read_text(encoding="utf-8").splitlines():
-            try:
-                rec = json.loads(line)
-                if rec.get("erro") is None and rec.get("d1") is not None:
-                    ja_feitos.add(rec["cache_key"])
-            except (json.JSONDecodeError, KeyError):
-                pass
+    ja_feitos = _carregar_ja_feitos(out)
 
-    df = (pd.read_csv(input_path) if input_path.endswith(".csv")
-          else pd.read_parquet(input_path))
-    if anonimizacao != "nenhuma":
-        # Aplica a máscara DE FATO ao corpo do texto (título/lead/1º§).
-        # Sem isto a flag seria só proveniência — e o T3 rodaria inválido
-        # com texto original rotulado como anonimizado.
-        from diagnostics.leakage import aplicar_anonimizacao
-        df = aplicar_anonimizacao(df, anonimizacao)
-    variante = f"{mode}|{date_mode}|{anonimizacao}"
+    df_base = (pd.read_csv(input_path) if input_path.endswith(".csv")
+              else pd.read_parquet(input_path))
+
+    from diagnostics.leakage import aplicar_anonimizacao
+
+    if dupla_vmax_vmin:
+        passadas = [("vmax", anonimizacao), ("vmin", nivel_vmin)]
+    else:
+        passadas = [(None, anonimizacao)]
 
     with out.open("a", encoding="utf-8") as f:
-        for _, row in df.iterrows():
-            ck = cache_key(provider_name, provider.model, str(row["item_id"]), variante)
-            if ck in ja_feitos:
-                continue
-            if not limiter.acquire():
-                print("Teto diário (RPD) atingido — retome amanhã com o mesmo comando.")
+        for rotulo, nivel in passadas:
+            df = aplicar_anonimizacao(df_base, nivel) if nivel != "nenhuma" else df_base
+            variante = f"{mode}|{date_mode}|{nivel}"
+            if dupla_vmax_vmin:
+                variante += f"|{rotulo}"  # sufixo de variante (pendência 5)
+            continuar = _rodar_passada(df, cfg, provider, provider_name, system,
+                                       date_mode, variante, rotulo, limiter,
+                                       ja_feitos, f)
+            if not continuar:
                 return
-            user = prompts.build_user_msg(row.to_dict(), date_mode=date_mode,
-                                          data_falsa=row.get("data_falsa"))
-            texto, erro = None, None
-            for tent in range(cfg["request"].get("max_retries", 5)):
-                try:
-                    texto = provider.complete(system, user)
-                    break
-                except Exception as e:  # noqa: BLE001 — backoff genérico p/ 429/5xx
-                    erro = str(e)
-                    time.sleep(min(2 ** tent * 5, 120))
-            parsed = parse_json_resposta(texto) if texto else None
-            rec = {
-                "cache_key": ck,
-                "item_id": row["item_id"],
-                "provider": provider_name,
-                "model": provider.model,
-                "prompt_version": prompts.PROMPT_VERSION,
-                "variante": variante,
-                "ts": dt.datetime.now().isoformat(timespec="seconds"),
-                "raw": texto,
-                "erro": None if parsed else (erro or "parse_falhou"),
-                **{k: (parsed or {}).get(k) for k in
-                   ("d1", "d2", "d3", "d2_sem_sinal", "d3_sem_sinal", "justificativa")},
-            }
-            f.write(json.dumps(rec, ensure_ascii=False) + "\n")
-            f.flush()
     print(f"Concluído: {out}")
 
 
@@ -182,7 +233,13 @@ if __name__ == "__main__":
     ap.add_argument("--mode", choices=["piloto", "producao"], default="piloto")
     ap.add_argument("--out", required=True)
     ap.add_argument("--date-mode", choices=["real", "omitida", "trocada"], default="real")
-    ap.add_argument("--anonimizacao", choices=["nenhuma", "L1", "L2", "L3"],
+    ap.add_argument("--anonimizacao", choices=["nenhuma", "L1", "L2", "L3", "L4"],
                     default="nenhuma")
+    ap.add_argument("--dupla-vmax-vmin", action="store_true",
+                    help="D12: pontua cada item 2x (texto integral + nivel-vmin) "
+                         "no mesmo arquivo, distinguido por variante_vazamento")
+    ap.add_argument("--nivel-vmin", choices=["L1", "L2", "L3", "L4"], default="L2",
+                    help="nível aprovado no T0 (t0_probe.py) para a variante V-min")
     a = ap.parse_args()
-    score_batch(a.provider, a.input, a.mode, a.out, a.date_mode, a.anonimizacao)
+    score_batch(a.provider, a.input, a.mode, a.out, a.date_mode, a.anonimizacao,
+               a.dupla_vmax_vmin, a.nivel_vmin)

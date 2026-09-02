@@ -16,7 +16,7 @@ ressalvas metodológicas e plano de publicação — está em
 |---|---|---|
 | [`coleta/`](coleta/) | 0 | Scraping do corpus de imprensa (busca da Globo + WordPress). Modular, multi-colaborador. |
 | [`mercado/`](mercado/) | 0 | Séries de mercado: curva DI, ETTJ, breakeven, CDS. |
-| [`llm/`](llm/) | 1–3 | Índice $\hat{C}^{LLM}_t$: prompts, provedores, piloto de anotação, bateria anti-vazamento, agregação. |
+| [`llm/`](llm/) | 1–3 | Índice $\hat{C}^{LLM}_t$: prompts, provedores (Sabiá/Gemini/Groq/Claude + braço local BERTimbau), piloto de anotação, bateria anti-vazamento (T0–T6), agregação. |
 | [`validacao/`](validacao/) | 4 | Kalman ($\hat{C}^{KF}_t$) e encompassing contra rivais → **Paper 1**. |
 | [`modelo/`](modelo/) | 5–7 | NK de 3 equações, projeções locais (Jordà), contrafactuais → **Paper 2**. |
 | [`docs/`](docs/) | — | Contexto, decisões travadas, guia de anotação, auditorias. |
