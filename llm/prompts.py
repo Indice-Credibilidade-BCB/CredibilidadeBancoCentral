@@ -88,6 +88,37 @@ def build_user_msg(item: dict, date_mode: str = "real", data_falsa: str | None =
     return "\n".join(partes)
 
 # ---------------------------------------------------------------------------
+# T0 — sonda de identificabilidade temporal (D11/4.2.3)
+#
+# Pergunta SEPARADA da pontuação de credibilidade: dado o item mascarado no
+# nível candidato, o modelo consegue datar o texto melhor que o acaso? Se
+# não consegue, ele não tem como condicionar a nota no desfecho futuro —
+# cegueira temporal é condição SUFICIENTE de ausência de vazamento por
+# prior de conhecimento, argumento mais barato e mais forte que qualquer
+# correlação residual (T2/T4).
+# ---------------------------------------------------------------------------
+PROMPT_SISTEMA_T0 = """Você vai ler um trecho de texto jornalístico ou de research sobre política monetária, com datas e nomes possivelmente removidos. Sua tarefa é estimar em que ANO o texto foi publicado, usando só pistas internas (estilo, referências a fatos econômicos, jargão).
+
+Não invente certeza que não tem: se o texto não dá pistas fortes, dê um intervalo largo.
+
+Responda SOMENTE com JSON válido, sem markdown, no formato:
+{"ano_estimado": <inteiro>, "intervalo_min": <inteiro>, "intervalo_max": <inteiro>}"""
+
+
+def build_user_msg_t0(item: dict) -> str:
+    """Mensagem do T0: SEM campo de data (é isso que se está testando) e com
+    o texto já mascarado no nível candidato (aplicar diagnostics.leakage.
+    anonimizar antes de chamar esta função)."""
+    partes = [f"VEÍCULO: {item.get('veiculo', 'não informado')}",
+              f"TÍTULO: {item['titulo']}"]
+    if item.get("lead"):
+        partes.append(f"LEAD: {item['lead']}")
+    if item.get("paragrafo_1"):
+        partes.append(f"PRIMEIRO PARÁGRAFO: {item['paragrafo_1']}")
+    return "\n".join(partes)
+
+
+# ---------------------------------------------------------------------------
 # Filtro de relevância via LLM (etapa opcional após o pré-filtro por regex)
 # ---------------------------------------------------------------------------
 PROMPT_RELEVANCIA = """Você classifica itens de imprensa para um estudo sobre a percepção do Banco Central do Brasil (BCB).
@@ -97,3 +128,20 @@ Um item é RELEVANTE se o texto expressa, discute ou reporta avaliações sobre:
 Um item é IRRELEVANTE se for: puramente procedural/agenda (ex.: "Copom se reúne amanhã", calendário de decisões), cobertura factual sem qualquer avaliação, ou tema sem ligação com o BCB e a meta.
 
 Responda SOMENTE com JSON: {"relevante": <true/false>}"""
+
+# ---------------------------------------------------------------------------
+# D13 — quarentena de desenvolvimento: hash do congelamento do prompt v1.0.
+#
+# Vazamento do PESQUISADOR (não do modelo): ajustar o prompt até a série
+# "parecer certa" injeta futuro no instrumento, e nenhum cutoff de treino
+# conserta isso. O hash é calculado sobre os textos dos prompts de fato
+# usados em produção/piloto/T0/relevância; qualquer edição muda o hash —
+# registrar a mudança no pré-registro é o ponto, não escondê-la.
+# `scorer.py` grava este hash em CADA linha de escore (proveniência).
+# ---------------------------------------------------------------------------
+import hashlib as _hashlib  # noqa: E402
+
+PROMPT_HASH = _hashlib.sha256("\n".join([
+    PROMPT_VERSION, PROMPT_SISTEMA_PILOTO, PROMPT_SISTEMA_PRODUCAO,
+    PROMPT_SISTEMA_T0, PROMPT_RELEVANCIA,
+]).encode("utf-8")).hexdigest()[:16]

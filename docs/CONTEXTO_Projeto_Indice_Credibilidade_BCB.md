@@ -54,8 +54,189 @@ Requisitos de design: (i) fonte na audiência; (ii) não construir a partir das 
 - Dimensões **de percepção** (não de emissão): o texto trata a meta como provável de ser cumprida? Expressa confiança/ceticismo quanto à condução? Atribui autonomia efetiva ou subordinação política?
 - **Índice de sinalização $\hat{S}^{LLM}_t$** (variável explicativa, opcional): pontua a comunicação oficial do Copom em consistência com guidance anterior, especificidade do forward guidance e reconhecimento de desvios. **Não mede credibilidade; mede esforço.** Usado para estimar o repasse do esforço à credibilidade percebida: $\hat{C}^{LLM}_t = c + d\,\hat{S}^{LLM}_t + \text{controles} + \omega_t$.
 
-### 4.2 Arquitetura interna do LLM (⚠️ EM ABERTO — próximo passo)
-Ainda **não definida**. A decidir: dimensões exatas e escala; esquema de anotação; modelo(s) de linguagem; engenharia de prompts; tratamento de *look-ahead* e de *viés de veículo*; pipeline de agregação para série temporal. **É o gargalo do caminho crítico.**
+### 4.2 Arquitetura interna do LLM (RESOLVIDA — implementada em `llm/`)
+
+Gargalo resolvido. Decisões travadas em `docs/Etapa2_Piloto_e_Implementacao_DECIDIDO.md`
+(D1–D10) e nesta seção (D11–D15). Implementação e código em `llm/` (ver
+`llm/README.md` para o mapa completo dos módulos) e `llm/local_encoder/`
+(braço local).
+
+#### 4.2.1 Componentes travados (D1–D10)
+
+| # | Decisão |
+|---|---|
+| D1 | 2 anotadores, cegos; gate $\kappa_{qw}$(D1) ≥ 0,6; contingência 0,5–0,6 → 3º desempatador + $\alpha$ de Krippendorff; adjudicação gera o rótulo-ouro |
+| D2 | Unidade do corpus: **título + lead + 1º parágrafo** |
+| D3 | Estágio de filtro de relevância (regex + gate LLM) antes da pontuação; item procedural não recebe nota |
+| D4 | Escalas ordinais **ancoradas**; `sem_sinal` como faltante (não "neutro") nas dimensões diagnósticas |
+| D5 | Provedores free-tier-first: Maritaca Sabiá (produção, créditos acadêmicos), Gemini Flash-Lite e Groq Llama 3.3 70B (baselines). Camada de prompt é agnóstica ao provedor. Claude (Anthropic) somado como 4ª medida independente — não é free-tier, mas custo do corpus inteiro é trivial (`llm/providers/anthropic_provider.py`, `config.yaml: providers.claude`) |
+| D6 | Bateria anti-vazamento T1–T6 pré-registrada, com critérios de reprovação |
+| D7 | Braço local: BERTimbau (pré-treino ≤2019), acionado se a API reprovar em T2/T4/T5 — implementado em `llm/local_encoder/` |
+| D8 | Deduplicação de *wire*: matéria de agência replicada conta 1×/mês |
+| D9 | Cache = checkpoint, respeitando RPM/RPD do free tier |
+| D10 | Detecção de halo: alerta se corr(D1,D2) do LLM exceder a humana em >0,20 |
+
+Piloto: 50 itens estratificados por episódio (2002-03, 2008-09, 2013-16, 2020-21,
+2022-24, calmaria) + 10 de borda para validar o filtro.
+
+#### 4.2.2 Vazamento temporal (look-ahead): enquadramento
+
+**A objeção.** Nenhum LLM de fronteira é temporalmente cego. Ao ler uma matéria de
+agosto de 2015, o modelo a lê *sabendo* que a meta estourou e que a Selic foi a 14,25%.
+Vale para qualquer provedor; não é eliminável por escolha de modelo.
+
+**A resposta.** "Garantir ausência de vazamento" é padrão inatingível para *qualquer*
+instrumento em macro aplicada — o DEG é codificado *ex post*; a fórmula de de Mendonça
+(2007) é fechada, mas foi escolhida olhando a série. O padrão correto é **limitar por
+construção, estimar e reportar como quantidade**.
+
+**Decomposição:**
+- **Vazamento de época** — o modelo usa prior de era, não o texto. Efeito de **nível**,
+  parcialmente absorvido por $\delta_h$ (Bloco 6) e por efeitos fixos de episódio.
+- **Vazamento de desfecho** — a nota em $t$ é função de $z_{t+h}$. **Fatal**: cria
+  correlação mecânica entre $\hat{C}^{LLM}_{t-1}$ e o que $\gamma_h$ deveria explicar.
+  T4 é o teste direto.
+
+**Horizonte de vazamento.** $h^{leak}_t = \text{cutoff}(M) - t$. O vazamento é
+heterogêneo e **decrescente em $t$** (item de 2003 sob cutoff 2025 tem 22 anos de futuro
+conhecido; item de 2025 tem zero). Implicação testável: se o vazamento move o índice, os
+efeitos de T2/T3 devem exibir **tendência negativa em $t$** — regressão auxiliar
+reportada junto de cada teste (`diagnostics/leakage.comparar_variantes(..., datas=...)`,
+campo `tendencia_abs_delta_vs_t_corr`).
+
+#### 4.2.3 D11 — T0: sonda de identificabilidade temporal
+
+Condicionar no futuro exige saber *quando* o texto foi escrito. Se o modelo não localiza
+o item no tempo melhor que o acaso, não pode usar o desfecho: identificabilidade baixa é
+**condição suficiente** de cegueira temporal — argumento mais forte e mais barato que
+qualquer correlação residual.
+
+Protocolo: sobre o item mascarado, em chamada separada, pedir o ano de publicação com
+intervalo. Métricas: EAM em anos e acurácia de atribuição a um dos 6 episódios contra a
+taxa-base de 1/6 ≈ 0,167. **Critério de cegueira: EAM ≥ 4 anos e acurácia ≤ 0,25.**
+
+T0 roda em escada; o **menor nível que atinge cegueira** define a variante mínima:
+L1 datas → L2 + autoridades do BC → L3 + políticos → **L4 + numéricos**.
+
+**L4 corrige lacuna real:** "Selic a 14,25%", "dólar a R$ 4,10", "IPCA de 10,67%" são
+impressões digitais de data tão fortes quanto a data explícita, e L1–L3 não as removia.
+L4 troca níveis por marcadores preservando a direção (`[SELIC_NIVEL]`), porque a direção
+é conteúdo de percepção e o nível é identificador.
+
+Implementado: `diagnostics/leakage.anonimizar` (escada L1–L4, com L4 = `_mascarar_numericos`),
+`diagnostics/temporal_probe.py` (lógica pura: `episodio_de`, `avaliar_t0`,
+`nivel_minimo_cego`) e `t0_probe.py` (round-trip com o provedor; sonda em
+chamada SEPARADA da pontuação de credibilidade, para não ancorar a nota no
+ano que o próprio modelo acabou de estimar).
+
+#### 4.2.4 D12 — Duas variantes de produção e a banda de vazamento
+
+- $\hat{C}^{V\text{-}max}_t$ — texto integral. **Série principal.**
+- $\hat{C}^{V\text{-}min}_t$ — no nível de mascaramento aprovado em T0, cega por
+  construção. **Robustez obrigatória.**
+
+Toda tabela principal (Bloco 3: $b_1$; Bloco 6: $\gamma_h$) traz as duas colunas. A
+diferença $\Delta_t$ é publicada como série — a banda de vazamento vira número, não
+ressalva retórica. Se as conclusões divergem, o V-min manda e a divergência é achado.
+Custo: dobra as chamadas (irrelevante; ~R$25–30 para 30 mil itens no sabiazinho).
+
+Implementado: `scorer.py --dupla-vmax-vmin --nivel-vmin L?` roda as duas
+passadas no mesmo arquivo (chave de cache com sufixo `|vmax`/`|vmin`, campo
+`variante_vazamento`); `aggregate.agregar_vmax_vmin` separa as duas séries
+mensais e publica `delta_t = c_llm_vmax − c_llm_vmin` como coluna própria.
+
+#### 4.2.5 D13 — Vazamento do pesquisador e quarentena de desenvolvimento
+
+A maior fonte de look-ahead pode não estar no modelo, mas em quem calibra o prompt.
+Ajustar o prompt até a série "parecer certa" em 2015 injeta futuro no instrumento, e
+**nenhum cutoff de treino conserta isso**. Vale também para a regra de agregação e o
+esquema de ancoragem.
+
+1. **Prompt v1.0 congelado** antes de qualquer inspeção da série agregada; hash
+   registrado no pré-registro — `prompts.PROMPT_HASH` (sha256 truncado dos textos de
+   sistema de piloto/produção/T0/relevância), gravado em CADA linha de escore
+   (`scorer.py`, campo `prompt_hash`).
+2. **Sandbox de 10%** do corpus, sorteado, para iteração e depuração —
+   **permanentemente excluído** da produção. Implementado em `sandbox.py`:
+   separação por HASH do `item_id` (não por `sample()` com seed — hash é
+   estável quando o corpus cresce depois; `sample` não é), manifesto
+   versionado em `dados/derivados/sandbox_ids.csv` (só ids opacos, sem
+   texto — permitido pelo `.gitignore`).
+3. Sintéticos (T5) como veículo primário de calibração: não têm desfecho verdadeiro.
+4. Revisão pós-congelamento é versionada, justificada por escrito e reportada, com a
+   série antiga mantida como robustez.
+
+#### 4.2.6 D14 — Assimetria de cutoff no braço local (revisa D7/T6)
+
+O BERTimbau **não** é instrumento limpo em toda a amostra. A assimetria é o inverso da
+intuição:
+
+| Recorte | BERTimbau (≤2019) | API de fronteira |
+|---|---|---|
+| 2019–2026 | **limpo** ($h^{leak}_t<0$) | contaminado |
+| 2000–2019 | contaminado | contaminado (mais) |
+
+Para um item de 2015, o pré-treino inclui 2016–2019 — futuro em relação ao item.
+Consequências: **T6 só é contraste informativo no pós-2019**; e concordância entre
+Sabiá, Gemini e Llama **não valida nada quanto a vazamento** (compartilham o mesmo
+conhecimento histórico) — ela testa robustez à troca de modelo, que é outra pergunta.
+
+Implementado: `diagnostics/leakage.comparar_t6(serie_api, serie_local, corte=2019-01-01)`
+descarta meses anteriores ao corte, não só os oculta do resumo.
+
+#### 4.2.7 D15 — Latitude do prompt como controle de vazamento
+
+O vazamento precisa de espaço para operar: "avalie a credibilidade do BCB" convida o
+prior; "esta frase expressa dúvida quanto ao cumprimento da meta? (sim/não/sem sinal)" é
+quase extrativa. As âncoras (D4) e o escopo curto (D2) já apertam isso. Fica registrado
+que **redução de latitude é decisão anti-vazamento**, e que revisão que amplie a
+discricionariedade obriga a rerodar T0, T2 e T3.
+
+#### 4.2.8 Fechamento do argumento (para o parecerista)
+
+Se o vazamento fosse fatal por princípio, o *encompassing* do Bloco 3 seria vazio — e não
+é. Um índice contaminado por prior de época pode ou não sobreviver ao controle por
+breakeven, CDS e dispersão do Focus. Se sobrevive com $b_1$ significativo, carrega
+informação **que os preços não carregam**, e essa informação teve de vir do texto —
+porque o prior de era é justamente o que os preços contemporâneos já refletem.
+
+A honestidade do desenho não está em alegar ausência de vazamento, mas em (i) medir a
+identificabilidade temporal, (ii) publicar a banda V-max/V-min, (iii) declarar
+$h^{leak}_t$ e sua heterogeneidade, (iv) pré-registrar o prompt contra o vazamento do
+próprio pesquisador. **Nenhum índice textual publicado para o Brasil reporta isso: é
+seção de resultado do Paper 1, não nota de rodapé.**
+
+#### 4.2.9 Estado do pipeline (D11–D15)
+
+Todos os 8 itens de código desta seção estão implementados e testados
+(`llm/tests/test_d11_d15.py`, `llm/tests/test_local_encoder.py`):
+
+1. ✅ L4 na escada de anonimização (`diagnostics/leakage.py`).
+2. ✅ T0 (`diagnostics/temporal_probe.py` + `t0_probe.py`) com EAM e
+   acurácia-de-episódio vs. taxa-base.
+3. ⬜ **Depende de dados/chaves, não de código:** rodar T0 no piloto real
+   nos 4 níveis e fixar o nível de V-min (`t0_probe.py rodar` + `relatorio`).
+4. ✅ Prompt v1.0 congelado + hash (`prompts.PROMPT_HASH`); sandbox de 10%
+   com manifesto versionado (`sandbox.py`) — falta só rodar
+   `sandbox.congelar_manifesto` sobre o corpus real na Etapa 3.
+5. ✅ Scorer com passada dupla V-max/V-min na mesma execução
+   (`scorer.py --dupla-vmax-vmin`, cache com sufixo de variante).
+6. ✅ Tendência em $t$ nos testes T2/T3 (`comparar_variantes(..., datas=...)`).
+7. ✅ T6 restrito ao pós-2019 (`comparar_t6`), com a nota de interpretação
+   do D14 embutida na saída.
+8. ✅ Séries duplas na agregação (`aggregate.agregar_vmax_vmin`) e
+   $\Delta_t$ exportado como série própria (`delta_t`).
+
+Também implementado nesta sessão, fora da lista original de pendências:
+- **Braço local (D7) de verdade**: `llm/local_encoder/` — CORAL (cabeça
+  ordinal, `coral.py`), construção do dataset com anonimização L1 e
+  validação cruzada **por blocos temporais** (`dataset.py`), fine-tuning
+  (`train.py`) e inferência no schema do scorer (`infer.py`). Testado
+  ponta a ponta com o BERTimbau real (não só sintético/mockado).
+- **Provedor Claude/Anthropic** (`providers/anthropic_provider.py`,
+  `config.yaml: providers.claude`): 4ª medida independente para D5.
+- **`verificar_provedores.py`**: checa chave configurada + chamada mínima
+  real, para os quatro provedores, antes de rodar o piloto de verdade.
 
 ### 4.3 Validação independente (DEFINIDO)
 Ancorar não em mais texto, mas em **comportamento revelado**: *breakeven* de inflação (NTN-B vs. prefixados), CDS soberano, inclinação da estrutura a termo — além das expectativas do Focus. "Preço é percepção sem retórica."
@@ -202,4 +383,18 @@ Fiocca ("A anomalia na política monetária do Brasil") argumenta que os juros r
 ## 12. Estado atual e próximo passo
 
 - **Concluído:** pergunta de pesquisa; fundamentação conceitual (incl. correção resposta vs. sinalização); fonte do índice; sistema de equações (Blocos 1–6 + fechamento); notas metodológicas; escolha e justificativa do modelo; incorporação do ponto Fiocca; etapas de execução. Existe um PDF de desenho de pesquisa (Seções 1–4 + referências).
-- **Em aberto / próximo passo:** **Etapa 1 — arquitetura interna do índice LLM** (Seção 4.2). É o gargalo. Começar por aqui, com a Etapa 0 (dados) rodando em paralelo.
+- **Concluído (Etapa 1 — o gargalo caiu):** arquitetura interna do índice LLM, Seção 4.2, D1–D15. Inclui o tratamento formal de vazamento temporal (T0, escada L1–L4, banda V-max/V-min, pré-registro contra vazamento do pesquisador, correção da assimetria de cutoff do braço local).
+- **Concluído (Etapa 2 — desenho e código):** pipeline Python implementado e testado (`coleta/`, `llm/`, `llm/local_encoder/`), guia de anotação humana (`Guia_Anotacao_v1.md`), documentos-mestre de decisões (`Etapa2_Piloto_e_Implementacao_DECIDIDO.md`, esta seção 4.2 para D11–D15). Quatro provedores prontos (Sabiá, Gemini, Groq, Claude) e o braço local (BERTimbau + CORAL) testado ponta a ponta.
+
+**Próximo passo — executar, não decidir.** Ordem:
+1. Rodar `verificar_provedores.py` para confirmar as chaves (Maritaca demora dias para aprovar créditos; Gemini, Groq e Anthropic são imediatos).
+2. Corpus no schema (Etapa 0) → `coleta/main.py` → `llm/corpus/from_coleta.py` → `sample_pilot.py`.
+3. Anotação humana (~2h por anotador) → `reliability.py` → gate κ → adjudicação (rótulo-ouro).
+4. `t0_probe.py rodar` nos 4 níveis (L1–L4) → `t0_probe.py relatorio` → nível mínimo de V-min.
+5. `sandbox.congelar_manifesto` sobre o corpus do piloto, ANTES de qualquer inspeção da série agregada (D13) — a quarentena só protege se for separada antes de olhar o resultado.
+6. `scorer.py` nos 4 provedores (com `--dupla-vmax-vmin` no provedor aprovado) → T0/T2/T3/T5 → decisão de produção (API vs. braço local, D6/D7).
+7. Se D6 reprovar ou por robustez do Paper 1: `local_encoder/train.py` (destilação prata+ouro, validação por blocos temporais) → `local_encoder/infer.py` → `comparar_t6` contra a série da API (só pós-2019, D14).
+
+**Depende de dado ou de terceiro, não de decisão:** série de surpresa inflacionária (IPCA realizado − Focus) para T2/T4, com o Sebastian; confirmação do Sebastian como 2º anotador; ajuste dos estratos à cobertura real do corpus; expandir sintéticos de 8 para 10+ pares (já em 12, ver auditoria); verificar quotas free-tier na hora de rodar; aprovação dos créditos acadêmicos da Maritaca.
+
+**Fora do caminho crítico / adiado:** FRB/US como segundo modelo (pós-Paper 2).

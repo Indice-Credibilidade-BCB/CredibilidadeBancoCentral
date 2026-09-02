@@ -27,7 +27,11 @@ veiculos_tipo:
 providers:
   gemini_flash_lite:
     kind: gemini
-    model: gemini-2.5-flash-lite       # conferir modelo free vigente no AI Studio
+    # gemini-2.5-flash-lite foi descontinuado p/ novos usuários (confirmado
+    # em 01/09/2026: 404 "no longer available to new users"). Testado e
+    # funcionando nesta chave em 01/09/2026; reconferir se voltar a falhar
+    # -- Google descontinua modelos free com frequência.
+    model: gemini-3.1-flash-lite
     api_key_env: GEMINI_API_KEY
     rpm: 10                            # margem sob o teto free (~15 RPM)
     thinking_budget: 0                 # 2.5: pensamento consumiria max_tokens
@@ -46,6 +50,17 @@ providers:
     api_key_env: GROQ_API_KEY
     rpm: 20
     rpd: 800
+  # Não é free-tier (D5 é "free-first", não "free-only"): 4ª medida
+  # independente para a tese de robustez à troca de modelo, e candidato a
+  # juiz de maior capacidade nos itens onde os três provedores free
+  # divergem. Custo do corpus inteiro é trivial (ordem de R$100-150).
+  claude:
+    kind: anthropic
+    model: claude-opus-5
+    api_key_env: ANTHROPIC_API_KEY
+    effort: low                        # classificação; não precisa de raciocínio longo
+    rpm: 40                            # conferir o tier real da chave no console
+    rpd: 50000
 
 request:
   temperature: 0.0

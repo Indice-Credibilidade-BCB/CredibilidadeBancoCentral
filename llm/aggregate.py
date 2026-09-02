@@ -44,7 +44,8 @@ def carregar_scores(jsonl_path: str) -> pd.DataFrame:
     df = df[df["d1"].notna()]
     if "cache_key" in df.columns:
         df = df.drop_duplicates(subset="cache_key", keep="last")
-    cols = ["item_id", "d1", "d2", "d3", "provider", "model", "prompt_version"]
+    cols = ["item_id", "d1", "d2", "d3", "provider", "model", "prompt_version",
+            "variante_vazamento"]  # D12: presente só quando o scorer rodou dupla_vmax_vmin
     return df[[c for c in cols if c in df.columns]]
 
 
@@ -73,6 +74,22 @@ def _fe_tipo_iterativa(df: pd.DataFrame, tol: float = 1e-10,
 
 
 def agregar(scores: pd.DataFrame, corpus: pd.DataFrame) -> pd.DataFrame:
+    """Agregação de UMA série (o caso de sempre: um scorer sem
+    `dupla_vmax_vmin`). Para a série dupla V-max/V-min de D12, ver
+    `agregar_vmax_vmin`."""
+    if "variante_vazamento" in scores.columns:
+        vals = set(scores["variante_vazamento"].dropna().unique())
+        if len(vals) > 1:
+            # Sem esta guarda, vmax e vmin do MESMO item entrariam juntos na
+            # mesma média mensal — dobra a contagem de itens e mistura as
+            # duas variantes de vazamento numa série sem sentido, em silêncio.
+            raise ValueError(
+                "scores contém mais de uma variante_vazamento (vmax/vmin) — "
+                "use agregar_vmax_vmin() em vez de agregar()")
+    return _agregar_core(scores, corpus)
+
+
+def _agregar_core(scores: pd.DataFrame, corpus: pd.DataFrame) -> pd.DataFrame:
     corpus = schema.dedup(schema.validate(corpus))
     df = scores.merge(
         corpus[["item_id", "data_publicacao", "tipo_veiculo", "wire_cluster"]],
@@ -131,6 +148,40 @@ def agregar(scores: pd.DataFrame, corpus: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+# ---------------------------------------------------------------------------
+# D12/pendência 8 — série dupla V-max/V-min e Δt como série própria.
+#
+# Exige que `scores` tenha a coluna `variante_vazamento` (só existe quando o
+# scorer rodou com --dupla-vmax-vmin). Agrega CADA variante pelo mesmo núcleo
+# (mesma FE de tipo, mesmo cluster wire) e depois junta por mês. V-max é a
+# série PRINCIPAL (D12; `c_llm` replica `c_llm_vmax` por conveniência de quem
+# só quer uma coluna); V-min é a robustez obrigatória; Δt = vmax - vmin vira
+# número publicável, não ressalva retórica.
+# ---------------------------------------------------------------------------
+
+def agregar_vmax_vmin(scores: pd.DataFrame, corpus: pd.DataFrame) -> pd.DataFrame:
+    if "variante_vazamento" not in scores.columns:
+        raise ValueError(
+            "scores sem coluna 'variante_vazamento' — rode o scorer com "
+            "--dupla-vmax-vmin, ou use agregar() para série única")
+    faltando = {"vmax", "vmin"} - set(scores["variante_vazamento"].dropna().unique())
+    if faltando:
+        raise ValueError(f"variante(s) ausente(s) em scores: {faltando}")
+
+    def _preparar(variante: str) -> pd.DataFrame:
+        sub = scores[scores["variante_vazamento"] == variante].drop(
+            columns=["variante_vazamento"])
+        r = _agregar_core(sub, corpus)
+        return r.rename(columns={c: f"{c}_{variante}" for c in r.columns if c != "mes"})
+
+    vmax = _preparar("vmax")
+    vmin = _preparar("vmin")
+    out = vmax.merge(vmin, on="mes", how="outer").sort_values("mes")
+    out["c_llm"] = out["c_llm_vmax"]  # alias: V-max é a série principal (D12)
+    out["delta_t"] = out["c_llm_vmax"] - out["c_llm_vmin"]
+    return out.reset_index(drop=True)
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--scores", required=True)
@@ -139,5 +190,12 @@ if __name__ == "__main__":
     a = ap.parse_args()
     corpus = (pd.read_parquet(a.corpus) if a.corpus.endswith(".parquet")
               else pd.read_csv(a.corpus))
-    agregar(carregar_scores(a.scores), corpus).to_csv(a.out, index=False)
+    scores = carregar_scores(a.scores)
+    if "variante_vazamento" in scores.columns and \
+            set(scores["variante_vazamento"].dropna().unique()) >= {"vmax", "vmin"}:
+        out = agregar_vmax_vmin(scores, corpus)
+        print("Série dupla V-max/V-min detectada (D12).")
+    else:
+        out = agregar(scores, corpus)
+    out.to_csv(a.out, index=False)
     print(f"Índice mensal salvo em {a.out}")
