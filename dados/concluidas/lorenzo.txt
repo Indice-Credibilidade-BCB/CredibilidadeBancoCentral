@@ -1,0 +1,518 @@
+Valor||Copom
+Valor||Selic Tombini
+Valor||Selic Ilan Goldfajn
+Valor||Selic Roberto Campos Neto
+Valor||Selic Galípolo
+Valor||ata do Copom
+Valor||política monetária Tombini
+Valor||política monetária Ilan Goldfajn
+Valor||política monetária Roberto Campos Neto
+Valor||política monetária Galípolo
+Valor||meta de inflação Tombini
+Valor||meta de inflação Ilan Goldfajn
+Valor||meta de inflação Roberto Campos Neto
+Valor||meta de inflação Galípolo
+Valor||Relatório de Inflação Tombini
+Valor||Relatório de Inflação Ilan Goldfajn
+Valor||Relatório de Inflação Roberto Campos Neto
+Valor||Relatório de Inflação Galípolo
+Valor||Banco Central Tombini
+Valor||Banco Central Ilan Goldfajn
+Valor||Banco Central Roberto Campos Neto
+Valor||Banco Central Galípolo
+O Globo||Copom
+O Globo||Selic
+O Globo||ata do Copom
+O Globo||política monetária
+O Globo||meta de inflação
+O Globo||Relatório de Inflação
+O Globo||Banco Central Tombini
+O Globo||Banco Central Ilan Goldfajn
+O Globo||Banco Central Roberto Campos Neto
+O Globo||Banco Central Galípolo
+Poder360||Copom||2016
+Poder360||Copom||2017
+Poder360||Copom||2018
+Poder360||Copom||2019
+Poder360||Selic||2016
+Poder360||Selic||2017
+Poder360||Selic||2018
+Poder360||Selic||2019
+Poder360||ata do Copom||2016
+Poder360||ata do Copom||2017
+Poder360||ata do Copom||2018
+Poder360||ata do Copom||2019
+Poder360||política monetária||2016
+Poder360||política monetária||2017
+Poder360||política monetária||2018
+Poder360||política monetária||2019
+Poder360||meta de inflação||2016
+Poder360||meta de inflação||2017
+Poder360||meta de inflação||2018
+Poder360||meta de inflação||2019
+Poder360||Relatório de Inflação||2016
+Poder360||Relatório de Inflação||2017
+Poder360||Relatório de Inflação||2018
+Poder360||Relatório de Inflação||2019
+Poder360||Banco Central||2016
+Poder360||Banco Central||2017
+Poder360||Banco Central||2018
+Poder360||Banco Central||2019
+InfoMoney||Copom||2016
+InfoMoney||Copom||2017
+InfoMoney||Copom||2018
+InfoMoney||Copom||2019
+InfoMoney||Selic||2016
+InfoMoney||Selic||2017
+InfoMoney||Selic||2018
+InfoMoney||Selic||2019
+InfoMoney||ata do Copom||2016
+InfoMoney||ata do Copom||2017
+InfoMoney||ata do Copom||2018
+InfoMoney||ata do Copom||2019
+InfoMoney||política monetária||2016
+InfoMoney||política monetária||2017
+InfoMoney||política monetária||2018
+InfoMoney||política monetária||2019
+InfoMoney||meta de inflação||2016
+InfoMoney||meta de inflação||2017
+InfoMoney||meta de inflação||2018
+InfoMoney||meta de inflação||2019
+InfoMoney||Relatório de Inflação||2016
+InfoMoney||Relatório de Inflação||2017
+InfoMoney||Relatório de Inflação||2018
+InfoMoney||Relatório de Inflação||2019
+InfoMoney||Banco Central||2016
+InfoMoney||Banco Central||2017
+InfoMoney||Banco Central||2018
+InfoMoney||Banco Central||2019
+Money Times||Copom||2016
+Money Times||Copom||2017
+Money Times||Copom||2018
+Money Times||Copom||2019
+Money Times||Selic||2016
+Money Times||Selic||2017
+Money Times||Selic||2018
+Money Times||Selic||2019
+Money Times||ata do Copom||2016
+Money Times||ata do Copom||2017
+Money Times||ata do Copom||2018
+Money Times||ata do Copom||2019
+Money Times||política monetária||2016
+Money Times||política monetária||2017
+Money Times||política monetária||2018
+Money Times||política monetária||2019
+Money Times||meta de inflação||2016
+Money Times||meta de inflação||2017
+Money Times||meta de inflação||2018
+Money Times||meta de inflação||2019
+Money Times||Relatório de Inflação||2016
+Money Times||Relatório de Inflação||2017
+Money Times||Relatório de Inflação||2018
+Money Times||Relatório de Inflação||2019
+Money Times||Banco Central||2016
+Money Times||Banco Central||2017
+Money Times||Banco Central||2018
+Money Times||Banco Central||2019
+Valor||Copom Tombini
+Valor||Copom Ilan Goldfajn
+Valor||Copom Roberto Campos Neto
+Valor||Copom Galípolo
+Poder360||Copom||2021
+Poder360||Selic||2021
+Poder360||ata do Copom||2021
+Poder360||política monetária||2021
+Poder360||meta de inflação||2021
+Poder360||Relatório de Inflação||2021
+Poder360||Banco Central||2021
+InfoMoney||Copom||2021
+InfoMoney||Selic||2021
+InfoMoney||ata do Copom||2021
+InfoMoney||política monetária||2021
+InfoMoney||meta de inflação||2021
+InfoMoney||Relatório de Inflação||2021
+InfoMoney||Banco Central||2021
+Money Times||Copom||2021
+Money Times||Selic||2021
+Money Times||ata do Copom||2021
+Money Times||política monetária||2021
+Money Times||meta de inflação||2021
+Money Times||Relatório de Inflação||2021
+Money Times||Banco Central||2021
+Valor||Copom||20200101-20220101
+Valor||Selic Tombini||20200101-20220101
+Valor||Selic Ilan Goldfajn||20200101-20220101
+Valor||Selic Roberto Campos Neto||20200101-20220101
+Valor||Selic Galípolo||20200101-20220101
+Valor||ata do Copom||20200101-20220101
+Valor||política monetária Tombini||20200101-20220101
+Valor||política monetária Ilan Goldfajn||20200101-20220101
+Valor||política monetária Roberto Campos Neto||20200101-20220101
+Valor||política monetária Galípolo||20200101-20220101
+Valor||meta de inflação Tombini||20200101-20220101
+Valor||meta de inflação Ilan Goldfajn||20200101-20220101
+Valor||meta de inflação Roberto Campos Neto||20200101-20220101
+Valor||meta de inflação Galípolo||20200101-20220101
+Valor||Relatório de Inflação Tombini||20200101-20220101
+Valor||Relatório de Inflação Ilan Goldfajn||20200101-20220101
+Valor||Relatório de Inflação Roberto Campos Neto||20200101-20220101
+Valor||Relatório de Inflação Galípolo||20200101-20220101
+Valor||Banco Central Tombini||20200101-20220101
+Valor||Banco Central Ilan Goldfajn||20200101-20220101
+Valor||Banco Central Roberto Campos Neto||20200101-20220101
+Valor||Banco Central Galípolo||20200101-20220101
+Poder360||Copom||2020
+Poder360||Selic||2020
+Poder360||ata do Copom||2020
+Poder360||política monetária||2020
+Poder360||meta de inflação||2020
+Poder360||Relatório de Inflação||2020
+Poder360||Banco Central||2020
+InfoMoney||Copom||2020
+InfoMoney||Selic||2020
+InfoMoney||ata do Copom||2020
+InfoMoney||política monetária||2020
+InfoMoney||meta de inflação||2020
+InfoMoney||Relatório de Inflação||2020
+InfoMoney||Banco Central||2020
+Money Times||Copom||2020
+Money Times||Selic||2020
+Money Times||ata do Copom||2020
+Money Times||política monetária||2020
+Money Times||meta de inflação||2020
+Money Times||Relatório de Inflação||2020
+Money Times||Banco Central||2020
+Valor||Copom||20220101-20240101
+Valor||Selic Tombini||20220101-20240101
+Valor||Selic Ilan Goldfajn||20220101-20240101
+Valor||Selic Roberto Campos Neto||20220101-20240101
+Valor||Selic Galípolo||20220101-20240101
+Valor||ata do Copom||20220101-20240101
+Valor||política monetária Tombini||20220101-20240101
+Valor||política monetária Ilan Goldfajn||20220101-20240101
+Valor||política monetária Roberto Campos Neto||20220101-20240101
+Valor||política monetária Galípolo||20220101-20240101
+Valor||meta de inflação Tombini||20220101-20240101
+Valor||meta de inflação Ilan Goldfajn||20220101-20240101
+Valor||meta de inflação Roberto Campos Neto||20220101-20240101
+Valor||meta de inflação Galípolo||20220101-20240101
+Valor||Relatório de Inflação||20220101-20240101
+Valor||Banco Central Tombini||20220101-20240101
+Valor||Banco Central Ilan Goldfajn||20220101-20240101
+Valor||Banco Central Roberto Campos Neto||20220101-20240101
+Valor||Banco Central Galípolo||20220101-20240101
+Poder360||Copom||2023
+Poder360||Selic||2023
+Poder360||ata do Copom||2023
+Poder360||política monetária||2023
+Poder360||meta de inflação||2023
+Poder360||Relatório de Inflação||2023
+Poder360||Banco Central||2023
+InfoMoney||Copom||2023
+InfoMoney||Selic||2023
+InfoMoney||ata do Copom||2023
+InfoMoney||política monetária||2023
+InfoMoney||meta de inflação||2023
+InfoMoney||Relatório de Inflação||2023
+InfoMoney||Banco Central||2023
+Money Times||Copom||2023
+Money Times||Selic||2023
+Money Times||ata do Copom||2023
+Money Times||política monetária||2023
+Money Times||meta de inflação||2023
+Money Times||Relatório de Inflação||2023
+Money Times||Banco Central||2023
+O Globo||Copom||20220101-20240101
+O Globo||Selic||20220101-20240101
+O Globo||ata do Copom||20220101-20240101
+O Globo||política monetária||20220101-20240101
+O Globo||meta de inflação||20220101-20240101
+O Globo||Relatório de Inflação||20220101-20240101
+O Globo||Banco Central Tombini||20220101-20240101
+O Globo||Banco Central Ilan Goldfajn||20220101-20240101
+O Globo||Banco Central Roberto Campos Neto||20220101-20240101
+O Globo||Banco Central Galípolo||20220101-20240101
+Poder360||Copom||2022
+Poder360||Selic||2022
+Poder360||ata do Copom||2022
+Poder360||política monetária||2022
+Poder360||meta de inflação||2022
+Poder360||Relatório de Inflação||2022
+Poder360||Banco Central||2022
+InfoMoney||Copom||2022
+InfoMoney||Selic||2022
+InfoMoney||ata do Copom||2022
+InfoMoney||política monetária||2022
+InfoMoney||meta de inflação||2022
+InfoMoney||Relatório de Inflação||2022
+InfoMoney||Banco Central||2022
+Money Times||Copom||2022
+Money Times||Selic||2022
+Money Times||ata do Copom||2022
+Money Times||política monetária||2022
+Money Times||meta de inflação||2022
+Money Times||Relatório de Inflação||2022
+Money Times||Banco Central||2022
+Valor||Copom||20240101-20260902
+Valor||Selic||20240101-20260902
+Valor||ata do Copom||20240101-20260902
+Valor||política monetária Tombini||20240101-20260902
+Valor||política monetária Ilan Goldfajn||20240101-20260902
+Valor||política monetária Roberto Campos Neto||20240101-20260902
+Valor||política monetária Galípolo||20240101-20260902
+Valor||meta de inflação||20240101-20260902
+Valor||Relatório de Inflação||20240101-20260902
+Valor||Banco Central Tombini||20240101-20260902
+Valor||Banco Central Ilan Goldfajn||20240101-20260902
+Valor||Banco Central Roberto Campos Neto||20240101-20260902
+Valor||Banco Central Galípolo||20240101-20260902
+Poder360||Copom||2024
+Poder360||Copom||2025
+Poder360||Copom||2026
+Poder360||Selic||2024
+Poder360||Selic||2025
+Poder360||Selic||2026
+Poder360||ata do Copom||2024
+Poder360||ata do Copom||2025
+Poder360||ata do Copom||2026
+Poder360||política monetária||2024
+Poder360||política monetária||2025
+Poder360||política monetária||2026
+Poder360||meta de inflação||2024
+Poder360||meta de inflação||2025
+Poder360||meta de inflação||2026
+Poder360||Relatório de Inflação||2024
+Poder360||Relatório de Inflação||2025
+Poder360||Relatório de Inflação||2026
+Poder360||Banco Central||2024
+Poder360||Banco Central||2025
+Poder360||Banco Central||2026
+InfoMoney||Copom||2024
+InfoMoney||Copom||2025
+InfoMoney||Copom||2026
+InfoMoney||Selic||2024
+InfoMoney||Selic||2025
+InfoMoney||Selic||2026
+InfoMoney||ata do Copom||2024
+InfoMoney||ata do Copom||2025
+InfoMoney||ata do Copom||2026
+InfoMoney||política monetária||2024
+InfoMoney||política monetária||2025
+InfoMoney||política monetária||2026
+InfoMoney||meta de inflação||2024
+InfoMoney||meta de inflação||2025
+InfoMoney||meta de inflação||2026
+InfoMoney||Relatório de Inflação||2024
+InfoMoney||Relatório de Inflação||2025
+InfoMoney||Relatório de Inflação||2026
+InfoMoney||Banco Central||2024
+InfoMoney||Banco Central||2025
+InfoMoney||Banco Central||2026
+Money Times||Copom||2024
+Money Times||Copom||2025
+Money Times||Copom||2026
+Money Times||Selic||2024
+Money Times||Selic||2025
+Money Times||Selic||2026
+Money Times||ata do Copom||2024
+Money Times||ata do Copom||2025
+Money Times||ata do Copom||2026
+Money Times||política monetária||2024
+Money Times||política monetária||2025
+Money Times||política monetária||2026
+Money Times||meta de inflação||2024
+Money Times||meta de inflação||2025
+Money Times||meta de inflação||2026
+Money Times||Relatório de Inflação||2024
+Money Times||Relatório de Inflação||2025
+Money Times||Relatório de Inflação||2026
+Money Times||Banco Central||2024
+Money Times||Banco Central||2025
+Money Times||Banco Central||2026
+O Globo||Copom||20240101-20260902
+O Globo||Selic||20240101-20260902
+O Globo||ata do Copom||20240101-20260902
+O Globo||política monetária||20240101-20260902
+O Globo||meta de inflação||20240101-20260902
+O Globo||Relatório de Inflação||20240101-20260902
+O Globo||Banco Central||20240101-20260902
+Valor||Copom Tombini||20110101-20130101
+Valor||Copom Ilan Goldfajn||20110101-20130101
+Valor||Copom Roberto Campos Neto||20110101-20130101
+Valor||Copom Galípolo||20110101-20130101
+Valor||Selic Tombini||20110101-20130101
+Valor||Selic Ilan Goldfajn||20110101-20130101
+Valor||Selic Roberto Campos Neto||20110101-20130101
+Valor||Selic Galípolo||20110101-20130101
+Valor||ata do Copom||20110101-20130101
+Valor||política monetária Tombini||20110101-20130101
+Valor||política monetária Ilan Goldfajn||20110101-20130101
+Valor||política monetária Roberto Campos Neto||20110101-20130101
+Valor||política monetária Galípolo||20110101-20130101
+Valor||meta de inflação Tombini||20110101-20130101
+Valor||meta de inflação Ilan Goldfajn||20110101-20130101
+Valor||meta de inflação Roberto Campos Neto||20110101-20130101
+Valor||meta de inflação Galípolo||20110101-20130101
+Valor||Relatório de Inflação Tombini||20110101-20130101
+Valor||Relatório de Inflação Ilan Goldfajn||20110101-20130101
+Valor||Relatório de Inflação Roberto Campos Neto||20110101-20130101
+Valor||Relatório de Inflação Galípolo||20110101-20130101
+Valor||Banco Central Tombini||20110101-20130101
+Valor||Banco Central Ilan Goldfajn||20110101-20130101
+Valor||Banco Central Roberto Campos Neto||20110101-20130101
+Valor||Banco Central Galípolo||20110101-20130101
+Poder360||Copom||2011
+Poder360||Copom||2012
+Poder360||Selic||2011
+Poder360||Selic||2012
+Poder360||ata do Copom||2011
+Poder360||ata do Copom||2012
+Poder360||política monetária||2011
+Poder360||política monetária||2012
+Poder360||meta de inflação||2011
+Poder360||meta de inflação||2012
+Poder360||Relatório de Inflação||2011
+Poder360||Relatório de Inflação||2012
+Poder360||Banco Central||2011
+Poder360||Banco Central||2012
+InfoMoney||Copom||2011
+InfoMoney||Copom||2012
+InfoMoney||Selic||2011
+InfoMoney||Selic||2012
+InfoMoney||ata do Copom||2011
+InfoMoney||ata do Copom||2012
+InfoMoney||política monetária||2011
+InfoMoney||política monetária||2012
+InfoMoney||meta de inflação||2011
+InfoMoney||meta de inflação||2012
+InfoMoney||Relatório de Inflação||2011
+InfoMoney||Relatório de Inflação||2012
+InfoMoney||Banco Central||2011
+InfoMoney||Banco Central||2012
+Money Times||Copom||2011
+Money Times||Copom||2012
+Money Times||Selic||2011
+Money Times||Selic||2012
+Money Times||ata do Copom||2011
+Money Times||ata do Copom||2012
+Money Times||política monetária||2011
+Money Times||política monetária||2012
+Money Times||meta de inflação||2011
+Money Times||meta de inflação||2012
+Money Times||Relatório de Inflação||2011
+Money Times||Relatório de Inflação||2012
+Money Times||Banco Central||2011
+Money Times||Banco Central||2012
+Valor||Copom Tombini||20130101-20150101
+Valor||Copom Ilan Goldfajn||20130101-20150101
+Valor||Copom Roberto Campos Neto||20130101-20150101
+Valor||Copom Galípolo||20130101-20150101
+Valor||Selic Tombini||20130101-20150101
+Valor||Selic Ilan Goldfajn||20130101-20150101
+Valor||Selic Roberto Campos Neto||20130101-20150101
+Valor||Selic Galípolo||20130101-20150101
+Valor||ata do Copom||20130101-20150101
+Valor||política monetária Tombini||20130101-20150101
+Valor||política monetária Ilan Goldfajn||20130101-20150101
+Valor||política monetária Roberto Campos Neto||20130101-20150101
+Valor||política monetária Galípolo||20130101-20150101
+Valor||meta de inflação Tombini||20130101-20150101
+Valor||meta de inflação Ilan Goldfajn||20130101-20150101
+Valor||meta de inflação Roberto Campos Neto||20130101-20150101
+Valor||meta de inflação Galípolo||20130101-20150101
+Valor||Relatório de Inflação Tombini||20130101-20150101
+Valor||Relatório de Inflação Ilan Goldfajn||20130101-20150101
+Valor||Relatório de Inflação Roberto Campos Neto||20130101-20150101
+Valor||Relatório de Inflação Galípolo||20130101-20150101
+Valor||Banco Central Tombini||20130101-20150101
+Valor||Banco Central Ilan Goldfajn||20130101-20150101
+Valor||Banco Central Roberto Campos Neto||20130101-20150101
+Valor||Banco Central Galípolo||20130101-20150101
+Poder360||Copom||2013
+Poder360||Copom||2014
+Poder360||Selic||2013
+Poder360||Selic||2014
+Poder360||ata do Copom||2013
+Poder360||ata do Copom||2014
+Poder360||política monetária||2013
+Poder360||política monetária||2014
+Poder360||meta de inflação||2013
+Poder360||meta de inflação||2014
+Poder360||Relatório de Inflação||2013
+Poder360||Relatório de Inflação||2014
+Poder360||Banco Central||2013
+Poder360||Banco Central||2014
+InfoMoney||Copom||2013
+InfoMoney||Copom||2014
+InfoMoney||Selic||2013
+InfoMoney||Selic||2014
+InfoMoney||ata do Copom||2013
+InfoMoney||ata do Copom||2014
+InfoMoney||política monetária||2013
+InfoMoney||política monetária||2014
+InfoMoney||meta de inflação||2013
+InfoMoney||meta de inflação||2014
+InfoMoney||Relatório de Inflação||2013
+InfoMoney||Relatório de Inflação||2014
+InfoMoney||Banco Central||2013
+InfoMoney||Banco Central||2014
+Money Times||Copom||2013
+Money Times||Copom||2014
+Money Times||Selic||2013
+Money Times||Selic||2014
+Money Times||ata do Copom||2013
+Money Times||ata do Copom||2014
+Money Times||política monetária||2013
+Money Times||política monetária||2014
+Money Times||meta de inflação||2013
+Money Times||meta de inflação||2014
+Money Times||Relatório de Inflação||2013
+Money Times||Relatório de Inflação||2014
+Money Times||Banco Central||2013
+Money Times||Banco Central||2014
+Valor||Copom Tombini||20150101-20160101
+Valor||Copom Ilan Goldfajn||20150101-20160101
+Valor||Copom Roberto Campos Neto||20150101-20160101
+Valor||Copom Galípolo||20150101-20160101
+Valor||Selic Tombini||20150101-20160101
+Valor||Selic Ilan Goldfajn||20150101-20160101
+Valor||Selic Roberto Campos Neto||20150101-20160101
+Valor||Selic Galípolo||20150101-20160101
+Valor||ata do Copom||20150101-20160101
+Valor||política monetária Tombini||20150101-20160101
+Valor||política monetária Ilan Goldfajn||20150101-20160101
+Valor||política monetária Roberto Campos Neto||20150101-20160101
+Valor||política monetária Galípolo||20150101-20160101
+Valor||meta de inflação Tombini||20150101-20160101
+Valor||meta de inflação Ilan Goldfajn||20150101-20160101
+Valor||meta de inflação Roberto Campos Neto||20150101-20160101
+Valor||meta de inflação Galípolo||20150101-20160101
+Valor||Relatório de Inflação Tombini||20150101-20160101
+Valor||Relatório de Inflação Ilan Goldfajn||20150101-20160101
+Valor||Relatório de Inflação Roberto Campos Neto||20150101-20160101
+Valor||Relatório de Inflação Galípolo||20150101-20160101
+Valor||Banco Central Tombini||20150101-20160101
+Valor||Banco Central Ilan Goldfajn||20150101-20160101
+Valor||Banco Central Roberto Campos Neto||20150101-20160101
+Valor||Banco Central Galípolo||20150101-20160101
+Poder360||Copom||2015
+Poder360||Selic||2015
+Poder360||ata do Copom||2015
+Poder360||política monetária||2015
+Poder360||meta de inflação||2015
+Poder360||Relatório de Inflação||2015
+Poder360||Banco Central||2015
+InfoMoney||Copom||2015
+InfoMoney||Selic||2015
+InfoMoney||ata do Copom||2015
+InfoMoney||política monetária||2015
+InfoMoney||meta de inflação||2015
+InfoMoney||Relatório de Inflação||2015
+InfoMoney||Banco Central||2015
+Money Times||Copom||2015
+Money Times||Selic||2015
+Money Times||ata do Copom||2015
+Money Times||política monetária||2015
+Money Times||meta de inflação||2015
+Money Times||Relatório de Inflação||2015
+Money Times||Banco Central||2015

@@ -10,8 +10,20 @@ from utilitarios import log, norm, slug
 
 # %% Expansão recursiva
 
-def expandir(termo, tenant, veiculo, fim, prof=0, max_prof=2, _visto=None) -> list:
-    """Subdivide a consulta até cada pedaço caber no teto de paginação."""
+def expandir(termo, tenant, veiculo, ini, fim, prof=0, max_prof=2, _visto=None) -> list:
+    """Subdivide a consulta até cada pedaço caber no teto de paginação.
+
+    A consulta "cabe sem subdividir" se a paginação profunda (posição
+    TETO_FROM-100, ver medirTermo) já alcança uma data ANTERIOR ao INÍCIO
+    da janela desejada (`limite < ini`) — é isso que garante que nada entre
+    `ini` e `fim` fica fora do alcance dos 10 mil resultados. Comparar com
+    `fim` (como uma versão anterior fazia) está errado: `fim` quase sempre
+    já é passado, então a comparação seria quase sempre verdadeira e a
+    consulta NUNCA seria subdividida — para termos muito cobertos (ex.:
+    "Copom" isolado), os 10 mil resultados mais recentes não chegam nem
+    perto do início da janela, e a varredura trunca silenciosamente sem que
+    o plano tenha avisado (visto na prática: "Copom" na Valor truncou em
+    2019-03, sem cobrir nada de 2016 a começo de 2019)."""
     _visto = _visto if _visto is not None else set()
     if termo in _visto:
         return []
@@ -24,7 +36,7 @@ def expandir(termo, tenant, veiculo, fim, prof=0, max_prof=2, _visto=None) -> li
     if total < cfg.TETO_FROM:
         return [{"consulta": termo, "total": total, "alcance": "completo",
                  "status": "enumerável", "nivel": prof}]
-    if limite is not None and limite < fim:
+    if limite is not None and limite < ini:
         return [{"consulta": termo, "total": total, "alcance": str(limite.date()),
                  "status": "alcança a janela", "nivel": prof}]
     if prof >= max_prof:
@@ -39,7 +51,7 @@ def expandir(termo, tenant, veiculo, fim, prof=0, max_prof=2, _visto=None) -> li
     for d in divisores:
         if norm(d) in norm(termo):
             continue
-        saida += expandir(f"{termo} {d}", tenant, veiculo, fim,
+        saida += expandir(f"{termo} {d}", tenant, veiculo, ini, fim,
                           prof + 1, max_prof, _visto)
     return saida
 
@@ -75,7 +87,7 @@ def planejar(veiculo, tenant, termos=None, ini=None, fim=None, max_prof=2,
     linhas = []
     for t in faltando:
         log(f"  planejando {t!r}")
-        linhas += expandir(t, tenant, veiculo, fim, max_prof=max_prof)
+        linhas += expandir(t, tenant, veiculo, ini, fim, max_prof=max_prof)
 
     novo = pd.DataFrame(linhas)
     novo["veiculo"] = veiculo
