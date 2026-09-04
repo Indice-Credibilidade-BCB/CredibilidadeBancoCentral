@@ -33,13 +33,22 @@ providers:
     # -- Google descontinua modelos free com frequência.
     model: gemini-3.1-flash-lite
     api_key_env: GEMINI_API_KEY
-    rpm: 10                            # margem sob o teto free (~15 RPM)
+    # Faturamento ativado (nível 1) em 02/09/2026. Testado na prática com a
+    # chave real: 150 requisições seguidas sem nenhum 429, ~76 req/min --
+    # esse teto é a LATÊNCIA de rede, não limite de taxa (não achamos o teto
+    # de verdade). rpm=60 fica com boa margem abaixo do que terceiros
+    # relatam pro nível 1 (~300 rpm) e do que testamos sem erro.
+    rpm: 60
     thinking_budget: 0                 # 2.5: pensamento consumiria max_tokens
-    rpd: 900                           # margem sob o teto free (~1000–1500 RPD)
+    rpd: 50000                         # nível pago não tem teto diário fixo conhecido; folga generosa
   sabia:
     kind: openai_compat
     base_url: https://chat.maritaca.ai/api
-    model: sabia-4                     # ajustar conforme créditos acadêmicos concedidos
+    # sabiazinho-4, não sabia-4: o corpus inteiro (~66 mil itens, ~44M
+    # tokens) custa uma fração do crédito disponível (R$70) no sabiazinho
+    # (~R$55-66, estimativa D5 escalada); no sabia-4 estouraria bem além
+    # disso. Trocar para sabia-4 só com crédito compatível confirmado.
+    model: sabiazinho-4
     api_key_env: MARITACA_API_KEY
     rpm: 20
     rpd: 50000
