@@ -33,7 +33,17 @@ class GeminiProvider(ProviderBase):
             headers={"x-goog-api-key": self.api_key},
             timeout=self.request_cfg.get("timeout_s", 60),
         )
-        r.raise_for_status()
+        if not r.ok:
+            # r.raise_for_status() sozinho só dá "429 Client Error: Too Many
+            # Requests for url: ..." -- sem a mensagem de verdade. Visto na
+            # prática: um 429 de "Your prepayment credits are depleted"
+            # ficou indistinguível de rate-limit comum por 16h, retentando
+            # à toa sem que ninguém percebesse a causa real a tempo.
+            try:
+                detalhe = r.json().get("error", {}).get("message", r.text[:300])
+            except ValueError:
+                detalhe = r.text[:300]
+            raise RuntimeError(f"Gemini {r.status_code}: {detalhe}")
         data = r.json()
         try:
             return data["candidates"][0]["content"]["parts"][0]["text"]
