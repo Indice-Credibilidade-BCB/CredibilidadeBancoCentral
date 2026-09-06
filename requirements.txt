@@ -2,3 +2,9 @@
 # requirements.txt da pasta correspondente (coleta/, llm/).
 -r coleta/requirements.txt
 -r llm/requirements.txt
+
+# validacao/ e modelo/ (Etapas 4–7): econometria e figuras
+statsmodels>=0.14
+scipy>=1.10
+matplotlib>=3.7
+tabulate>=0.9        # DataFrame.to_markdown nos relatórios

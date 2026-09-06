@@ -37,6 +37,8 @@ de terceiros. **Isso não vai para o Git.** O `.gitignore` nega tudo dentro de
 - ✅ `dados/derivados/` — índice mensal, bandas, contagens: agregados que não
   permitem reconstruir os textos. É o que acompanha o paper.
 - ❌ `dados/bruto/`, `dados/noticias.csv`, `dados/llm/` — texto de terceiros.
+- ❌ `dados/macro/` — cache das séries do BCB (SGS/Focus/Copom) baixadas por
+  `validacao/dados_bcb.py`. Públicas, mas são cache: cada máquina baixa as suas.
 
 Se o repositório for público, isso é obrigatório. Se for privado, continua
 sendo a postura certa: um repositório muda de visibilidade com dois cliques, e
@@ -62,4 +64,18 @@ cd coleta && python main.py       # ou célula a célula (# %%); consolidar()
 cd ../llm
 python corpus/from_coleta.py
 python sample_pilot.py
+
+# 3) Etapa 4 (Paper 1): séries do BCB -> Kalman -> encompassing — ver validacao/README.md
+cd ..
+python -m validacao.dados_bcb        # baixa SGS/Focus/Copom para dados/macro/ (cache local)
+python -m validacao.pipeline         # -> dados/derivados/validacao/relatorio.md
+
+# 4) Etapas 5–7 (Paper 2): choque -> NK -> projeções locais -> contrafactual — ver modelo/README.md
+python -m modelo.pipeline            # -> dados/derivados/modelo/relatorio.md
+
+# Testes das Etapas 4–7 (sintéticos, sem rede)
+python -m pytest validacao/tests modelo/tests -q
 ```
+
+`validacao/` e `modelo/` rodam da raiz (`python -m ...`), porque `modelo/`
+importa de `validacao/`.
