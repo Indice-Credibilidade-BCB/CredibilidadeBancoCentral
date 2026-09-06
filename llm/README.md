@@ -4,11 +4,9 @@ Pontua, via LLM, a percepção de terceiros sobre o BCB em três dimensões e
 agrega numa série mensal em [0,1]. Free-first (roda em tier gratuito),
 retomável (cache = checkpoint) e agnóstico de provedor.
 
-Decisões travadas: [`../docs/Etapa2_Piloto_e_Implementacao_DECIDIDO.md`](../docs/Etapa2_Piloto_e_Implementacao_DECIDIDO.md)
-(D1–D10) e [`../docs/CONTEXTO_Projeto_Indice_Credibilidade_BCB.md`](../docs/CONTEXTO_Projeto_Indice_Credibilidade_BCB.md#42-arquitetura-interna-do-llm-resolvida--implementada-em-llm)
-(Seção 4.2, D11–D15: vazamento temporal, T0, V-max/V-min, quarentena do
-pesquisador, braço local) · Auditorias: [`../docs/AUDITORIA_2026-08-18.md`](../docs/AUDITORIA_2026-08-18.md),
-[`../docs/AUDITORIA_2026-09-01.md`](../docs/AUDITORIA_2026-09-01.md)
+Decisões travadas (D1–D15: nº de anotadores, vazamento temporal, T0,
+V-max/V-min, quarentena do pesquisador, braço local) e auditorias estão nos
+documentos de contexto em `../docs/local/` (não versionados).
 · Guia do anotador: [`../docs/Guia_Anotacao_v1.md`](../docs/Guia_Anotacao_v1.md)
 
 ## Estrutura

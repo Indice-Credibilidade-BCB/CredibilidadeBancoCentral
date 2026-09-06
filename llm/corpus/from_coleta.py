@@ -4,7 +4,7 @@
 Converte a base consolidada da coleta (`dados/noticias.csv`, saída de
 `consolidar()` em coleta/pipeline.py, ou um .xlsx exportado dela) no schema exigido por
 `schema.validate`. Validado contra `noticias_2016_2017.xlsx` (971 itens,
-Valor + Poder360) — ver docs/TESTE_INICIAL_corpus_2016_2017.md.
+Valor + Poder360) — ver docs/local/TESTE_INICIAL_corpus_2016_2017.md (nota local).
 
 Decisões embutidas:
   - `item_id` = sha1 da URL normalizada. A busca da Globo devolve um
@@ -15,7 +15,7 @@ Decisões embutidas:
     removendo a query colapsa TODO o Valor num único id (o path é
     idêntico), e não normalizar deixa passar duplicata. Com o desembrulho,
     os 971 itens de 2016-17 viram 915 artigos distintos (56 duplicatas
-    reais recuperadas). Ver docs/TESTE_INICIAL_corpus_2016_2017.md.
+    reais recuperadas). Ver docs/local/TESTE_INICIAL_corpus_2016_2017.md (nota local).
   - `subtitulo` -> `lead`. Ausente no Valor (a busca da Globo não devolve),
     presente no Poder360. `build_user_msg` já tolera lead vazio.
   - `p1` -> `paragrafo_1`. NÃO usamos a coluna `texto_llm` da coleta: ela

@@ -42,3 +42,9 @@ env/
 .DS_Store
 *.log
 .pytest_cache/
+
+# ─── Notas locais ────────────────────────────────────────────────────────
+# Contexto de sessão para o Claude, auditorias, registros de decisão e logs
+# de testes exploratórios. Ficam na máquina de quem escreveu; só entra no
+# repositório o que é material do método (ex.: docs/Guia_Anotacao_v1.md).
+docs/local/

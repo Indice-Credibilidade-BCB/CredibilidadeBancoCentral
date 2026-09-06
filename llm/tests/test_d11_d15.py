@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Testes das pendências D11-D15 (ver docs/CONTEXTO..., Seção 4.2.9):
+"""Testes das pendências D11-D15 (ver docs/local/CONTEXTO..., Seção 4.2.9, nota local):
 L4 numérico, T0 (temporal_probe), sandbox (D13), scorer duplo V-max/V-min
 (D12), agregação dupla + delta_t, tendência em t (T2/T3) e T6 pós-2019.
 

@@ -7,8 +7,8 @@ implícita em expectativas e preços (**validade**) e se explica a heterogeneida
 na transmissão de choques de política monetária (**utilidade**).
 
 O desenho completo — pergunta de pesquisa, sistema de equações (Blocos 1–6),
-ressalvas metodológicas e plano de publicação — está em
-[`docs/CONTEXTO_Projeto_Indice_Credibilidade_BCB.md`](docs/CONTEXTO_Projeto_Indice_Credibilidade_BCB.md).
+ressalvas metodológicas e plano de publicação — está no documento de contexto
+do projeto, mantido fora do repositório (`docs/local/`, não versionado).
 
 ## Mapa do repositório
 
@@ -19,7 +19,7 @@ ressalvas metodológicas e plano de publicação — está em
 | [`llm/`](llm/) | 1–3 | Índice $\hat{C}^{LLM}_t$: prompts, provedores (Sabiá/Gemini/Groq/Claude + braço local BERTimbau), piloto de anotação, bateria anti-vazamento (T0–T6), agregação. |
 | [`validacao/`](validacao/) | 4 | Kalman ($\hat{C}^{KF}_t$) e encompassing contra rivais → **Paper 1**. |
 | [`modelo/`](modelo/) | 5–7 | NK de 3 equações, projeções locais (Jordà), contrafactuais → **Paper 2**. |
-| [`docs/`](docs/) | — | Contexto, decisões travadas, guia de anotação, auditorias. |
+| [`docs/`](docs/) | — | Guia de anotação. Contexto, decisões e auditorias ficam em `docs/local/` (não versionado). |
 | `dados/` | — | **Não versionado** (ver abaixo). Criado localmente por quem roda. |
 
 As pastas usam nomes importáveis em Python (sem prefixo numérico) porque os
