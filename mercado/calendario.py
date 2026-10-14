@@ -201,17 +201,51 @@ def tabela_vencimentos_genericos(inicio: str, fim: str, n: int = 4) -> pd.DataFr
 
 # ─── Copom ───────────────────────────────────────────────────────────────
 
-def _agenda_futura() -> pd.Series:
-    """Reuniões futuras (opcional): ``dados/mercado/copom_agenda_futura.csv`` com coluna ``data_reuniao``.
+URL_AGENDA_BCB = "https://www.bcb.gov.br/api/servico/sitebcb/calendario"
 
-    O BCB não expõe o calendário futuro por API. Sem o arquivo, a última
-    reunião fica com ``proxima_reuniao`` vazia e a contaminação do contrato
-    curto não é avaliada para ela.
+
+def agenda_copom_bcb(inicio: str = "2025-01-01", fim: str | None = None, atualizar: bool = False) -> pd.DataFrame:
+    """Calendário oficial de reuniões (passadas e FUTURAS) da agenda "Reuniões do Copom" do site do BCB.
+
+    É o serviço que a página de calendário do BCB consome (descoberto no
+    bundle do site). Cada reunião aparece como dois eventos de um dia; a data
+    de decisão é o segundo. Cache em ``dados/mercado/copom_agenda.csv``.
+    Colunas: ``data_inicio``, ``data_reuniao`` (decisão).
     """
+    cache = DIR_MERCADO / "copom_agenda.csv"
+    if cache.exists() and not atualizar:
+        return pd.read_csv(cache, parse_dates=["data_inicio", "data_reuniao"])
+    fim = fim or f"{pd.Timestamp.today().year + 2}-12-31"
+    r = requests.get(URL_AGENDA_BCB, params={"lista": "Reuniões do Copom", "inicioAgenda": f"'{inicio}'",
+                                            "fimAgenda": f"'{fim}'"},
+                     headers={"User-Agent": "Mozilla/5.0", "accept": "application/json"}, timeout=60)
+    r.raise_for_status()
+    dias = pd.to_datetime(pd.DataFrame(r.json()["conteudo"])["dataEvento"], utc=True)
+    dias = dias.dt.tz_convert("America/Sao_Paulo").dt.tz_localize(None).dt.normalize().drop_duplicates().sort_values()
+    # agrupa dias consecutivos (até 3 dias corridos de distância) numa reunião
+    grupo = (dias.diff().dt.days.fillna(99) > 3).cumsum()
+    ag = pd.DataFrame({"dia": dias.values, "g": grupo.values}).groupby("g")["dia"].agg(["min", "max"])
+    out = ag.rename(columns={"min": "data_inicio", "max": "data_reuniao"}).reset_index(drop=True)
+    DIR_MERCADO.mkdir(parents=True, exist_ok=True)
+    out.to_csv(cache, index=False, date_format="%Y-%m-%d")
+    return out
+
+
+def _agenda_futura() -> pd.Series:
+    """Datas de decisão conhecidas além do histórico: agenda oficial do BCB + arquivo manual opcional.
+
+    O arquivo ``dados/mercado/copom_agenda_futura.csv`` (coluna ``data_reuniao``)
+    continua aceito como complemento manual.
+    """
+    datas = []
+    try:
+        datas.append(agenda_copom_bcb()["data_reuniao"])
+    except Exception:  # noqa: BLE001 — sem rede e sem cache
+        pass
     p = DIR_MERCADO / "copom_agenda_futura.csv"
-    if not p.exists():
-        return pd.Series(dtype="datetime64[ns]")
-    return pd.to_datetime(pd.read_csv(p)["data_reuniao"])
+    if p.exists():
+        datas.append(pd.to_datetime(pd.read_csv(p)["data_reuniao"]))
+    return pd.concat(datas).drop_duplicates() if datas else pd.Series(dtype="datetime64[ns]")
 
 
 def calendario_copom(reunioes: pd.DataFrame | None = None, n_venc: int = 4) -> pd.DataFrame:

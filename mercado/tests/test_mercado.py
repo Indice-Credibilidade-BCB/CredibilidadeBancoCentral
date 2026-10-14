@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from mercado import anbima, calendario as cal, inflacao_implicita as ii
+from mercado import anbima, b3_taxas as b3, calendario as cal, inflacao_implicita as ii
 
 
 # ─── calendário ──────────────────────────────────────────────────────────
@@ -135,3 +135,39 @@ def test_pontos_e_curvas_sem_extrapolacao():
     assert np.isnan(cd["nominal_5a"])        # acima do máximo: sem extrapolação
     assert 6.0 < cd["real_2a"] < 6.2
     assert np.isclose(cd["implicita_2a"], 100 * ((1 + cd["nominal_2a"] / 100) / (1 + cd["real_2a"] / 100) - 1))
+
+
+# ─── B3 TaxaSwap ─────────────────────────────────────────────────────────
+
+LINHAS_TS = [
+    "0000010010120261009T1PRE  DIxPRE         0000100001+00000149000000F00001",
+    "0000020010120261009T1PRE  DIxPRE         0035600252+00000127350000M00356",
+    "0000030010120261009T1PRE  DIxPRE         0072000504+00000124000000M00720",
+    "0000040010120261009T1DIC  DI X IPCA      0035600252+00000089800000M00356",
+    "0000050010120261009T1ACC  DIxDOL Aj. Cupo0035600252+00000064140000M00356",
+    "0000060010120261009T1SDE  DOLx EURO      0035600252-00000017400000M00356",
+]
+
+
+def test_parse_ts_filtra_curvas_e_le_sinal():
+    df = b3.parse(LINHAS_TS)
+    assert set(df["curva"]) == {"PRE", "DIC"} and len(df) == 4
+    assert df.loc[(df.curva == "PRE") & (df.du == 252), "taxa"].iloc[0] == pytest.approx(12.735)
+    neg = b3.parse(LINHAS_TS, curvas=("SDE",))
+    assert neg["taxa"].iloc[0] == pytest.approx(-1.74)
+
+
+def test_flat_forward_reproduz_vertices_e_nao_extrapola():
+    du = np.array([1, 252, 504]); tx = np.array([14.9, 12.735, 12.4])
+    out = b3.flat_forward(du, tx, [252, 504, 378, 600])
+    assert out[0] == pytest.approx(12.735) and out[1] == pytest.approx(12.4)
+    assert 12.4 < out[2] < 12.735 and np.isnan(out[3])
+    # forward constante entre 252 e 504: fator em 378 é a média geométrica
+    f252, f504 = 1.12735, 1.124 ** 2
+    assert (1 + out[2] / 100) ** 1.5 == pytest.approx((f252 * f504) ** 0.5, rel=1e-9)
+
+
+def test_parse_ts_layout_antigo_ate_2002():
+    antigo = ["0002710010120010301T1PRE  DIxPRE         0036900252+000162800000 "]
+    df = b3.parse(antigo)
+    assert len(df) == 1 and df["taxa"].iloc[0] == pytest.approx(16.28) and df["du"].iloc[0] == 252

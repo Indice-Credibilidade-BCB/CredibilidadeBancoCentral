@@ -25,7 +25,7 @@ import pandas as pd
 from validacao import dados_bcb
 from validacao.dados_bcb import BANDA_TOLERANCIA, DIR_MACRO
 
-from . import anbima, calendario, inflacao_implicita
+from . import anbima, b3_taxas, calendario, inflacao_implicita
 
 # Metas revistas pelo CMN depois de fixadas (valor original -> o SGS traz o revisto).
 META_ORIGINAL = {2003: 3.25, 2004: 3.75}
@@ -111,9 +111,14 @@ def rodar(atualizar: bool = False) -> pd.DataFrame:
        str(sm.index.min().date()), str(sm.index.max().date()))
     ok("Decisões do Copom", "BCB histórico de taxas", "dados/macro/reunioes_copom.csv", len(rc),
        str(rc.data_reuniao.min().date()), str(rc.data_reuniao.max().date()))
-    # 4) Calendário Copom × DI1 + genéricos
+    # 4) Calendário Copom × DI1 + genéricos (agenda oficial do BCB inclui as reuniões futuras)
     calendario.feriados_anbima(atualizar=atualizar)
     calendario.feriados.cache_clear()
+    ag = calendario.agenda_copom_bcb(atualizar=True)
+    futuras = ag[ag.data_reuniao > rc.data_reuniao.max()]
+    ok("Agenda do Copom (inclui futuras)", "BCB — agenda 'Reuniões do Copom'", "dados/mercado/copom_agenda.csv",
+       len(ag), str(ag.data_reuniao.min().date()), str(ag.data_reuniao.max().date()),
+       f"{len(futuras)} reuniões futuras: " + ", ".join(str(d.date()) for d in futuras.data_reuniao.head(3)) + ("…" if len(futuras) > 3 else ""))
     cal = calendario.salvar_calendario()
     ok("Calendário Copom × DI1", "BCB + regra B3 + feriados ANBIMA", "dados/mercado/calendario_copom_di1.csv",
        len(cal), str(cal.data_reuniao.min().date()), str(cal.data_reuniao.max().date()),
@@ -143,7 +148,40 @@ def rodar(atualizar: bool = False) -> pd.DataFrame:
         if len(v5):
             ok("Validação Tesouro Direto × ANBIMA", "—", "dados/mercado/validacao_td_vs_anbima.csv", int(v5.n_dias.iloc[0]),
                "", "", f"implícita 5a: dif. média {v5.dif_media_pp.iloc[0]:+.3f} p.p., corr {v5.corr_diaria.iloc[0]:.3f}")
+    # 7) B3 — curvas de referência (DI×Pré desde 2001; LTN/NTN-B desde 2004; DI×IPCA desde 2005)
+    b3 = b3_taxas.construir(coletar_antes=True)
+    bd = b3["diario"]
+    ok("Curvas B3: DI×Pré, DI×IPCA, LTN, NTN-B", "B3 TaxaSwap", "dados/mercado/curvas_b3_diario.csv",
+       len(bd), str(bd.data.min().date()), str(bd.data.max().date()),
+       f"implícita de títulos 5a em {100*b3['cobertura']['implicita_titulos_5a']:.0f}% dos dias")
+    if b3["validacao"] is not None:
+        v = b3["validacao"]
+        v5 = v[(v.horizonte == "5a") & (v.fonte_b3 == "titulos") & (v.curva == "implicita")]
+        if len(v5):
+            ok("Validação B3 (títulos) × ANBIMA", "—", "dados/mercado/validacao_b3_vs_anbima.csv", int(v5.n_dias.iloc[0]),
+               "", "", f"implícita 5a: dif. média {v5.dif_media_pp.iloc[0]:+.3f} p.p., corr {v5.corr_diaria.iloc[0]:.3f}")
+    # 8) Rival de mercado: implícita 5a de títulos da B3; buracos preenchidos com o Tesouro Direto
+    riv = salvar_breakeven(bd, d)
+    ok("Rival breakeven (Bloco 3)", "B3 títulos, Tesouro Direto nos buracos", "dados/mercado/breakeven.csv",
+       len(riv), str(riv.data.min().date()), str(riv.data.max().date()),
+       ", ".join(f"{k}: {v}" for k, v in riv.fonte.value_counts().items()))
     return pd.DataFrame(status)
+
+
+def salvar_breakeven(b3_diario: pd.DataFrame, td_diario: pd.DataFrame, horizonte: str = "5a") -> pd.DataFrame:
+    """``dados/mercado/breakeven.csv`` (data, valor, fonte) para ``validacao.rivais``.
+
+    Preferência: implícita de títulos da B3 (LTN × NTN-B, reproduz a ETTJ
+    ANBIMA com erro de centésimos); dias sem ela usam o Tesouro Direto.
+    """
+    b = b3_diario[["data", f"implicita_titulos_{horizonte}"]].rename(columns={f"implicita_titulos_{horizonte}": "b3"})
+    t = td_diario[["data", f"implicita_{horizonte}"]].rename(columns={f"implicita_{horizonte}": "td"})
+    j = b.merge(t, on="data", how="outer").sort_values("data")
+    j["valor"] = j["b3"].combine_first(j["td"])
+    j["fonte"] = np.where(j["b3"].notna(), "b3_titulos", np.where(j["td"].notna(), "tesouro_direto", None))
+    out = j.dropna(subset=["valor"])[["data", "valor", "fonte"]]
+    out.to_csv(b3_taxas.DIR_MERCADO / "breakeven.csv", index=False, date_format="%Y-%m-%d")
+    return out
 
 
 def main() -> None:  # pragma: no cover
