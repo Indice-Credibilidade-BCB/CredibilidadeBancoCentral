@@ -44,7 +44,11 @@ from . import dispositivo as disp  # noqa: E402
 from .coral import coral_probs_to_label, coral_targets  # noqa: E402
 from .dataset import amostrar_prata, dividir_blocos_temporais, montar_exemplos  # noqa: E402
 
-MAX_PRATA_PADRAO = 5000  # D7: 2–5 mil rótulos-prata
+# D7 previa 2–5 mil rótulos-prata; emenda de 2026-10-14: 20 mil e 4 épocas.
+# Medido só com prata do Sabiá, validando no bloco temporal mais recente:
+# 5 mil/3 épocas -> kappa_qw 0,32; 20 mil/3 -> 0,55; 20 mil/4 -> 0,59.
+MAX_PRATA_PADRAO = 20000
+EPOCAS_PADRAO = 4
 
 
 def _carregar_rotulos_prata(jsonl_path: str) -> pd.DataFrame:
@@ -236,9 +240,9 @@ if __name__ == "__main__":
     ap.add_argument("--todos-blocos", action="store_true",
                     help="validação cruzada temporal completa (um treino por bloco; ~n_blocos× o tempo)")
     ap.add_argument("--max-prata", type=int, default=MAX_PRATA_PADRAO,
-                    help="nº máximo de rótulos-prata, amostrados por ano (D7: 2–5 mil); 0 = todos")
+                    help="nº máximo de rótulos-prata, amostrados por ano (D7 emendada: 20 mil); 0 = todos")
     ap.add_argument("--semente", type=int, default=42)
-    ap.add_argument("--epocas", type=int, default=3)
+    ap.add_argument("--epocas", type=int, default=EPOCAS_PADRAO)
     ap.add_argument("--batch-size", type=int, default=16)
     ap.add_argument("--batch-avaliacao", type=int, default=64)
     ap.add_argument("--lr", type=float, default=2e-5, help="taxa do encoder BERTimbau")

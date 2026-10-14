@@ -77,7 +77,7 @@ float16 automático. Tempos medidos em 2026-10-14 (RTX 3070 Ti 8 GB × CPU de
 | treino, 20 mil prata, 4 épocas | ~7 min | ~5 h |
 | pontuar o corpus inteiro (66 mil) | ~2 min | ~75 min |
 
-`--max-prata` (padrão 5.000, D7) amostra os rótulos-prata por ano;
+`--max-prata` (padrão 20.000, D7 emendada em 2026-10-14; 4 épocas) amostra os rótulos-prata por ano;
 `--todos-blocos` roda a validação cruzada temporal completa (um treino por
 bloco). Resultado só com prata do Sabiá, validando no bloco mais recente:
 5 mil rótulos → kappa_qw 0,32; 20 mil → 0,59 (acurácia 88% contra 83% de

@@ -59,9 +59,10 @@ def amostrar_prata(ex_prata: pd.DataFrame, n_max: int | None, semente: int = 42,
                    data_col: str = "data_publicacao") -> pd.DataFrame:
     """Amostra até ``n_max`` exemplos prata, ESTRATIFICADA POR ANO.
 
-    D7 previa destilação com 2–5 mil rótulos-prata (o corpus inteiro tem
-    ~66 mil; treinar com todos custa ~13× mais e não melhora a régua, que é
-    ancorada pelo ouro humano). A estratificação por ano preserva a
+    D7 previa destilação com 2–5 mil rótulos-prata; a emenda de 2026-10-14
+    subiu o padrão para 20 mil (kappa 0,32 -> 0,59 contra o professor). O
+    corpus inteiro tem ~66 mil; não usar todos mantém o ouro humano com
+    peso relevante e o treino em minutos. A estratificação por ano preserva a
     cobertura temporal — a amostra aleatória simples sub-representaria os
     anos com pouco corpus (2011–2018), justamente os que a validação por
     blocos temporais precisa ver. Determinística dada a ``semente``.
