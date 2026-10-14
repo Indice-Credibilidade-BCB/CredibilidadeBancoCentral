@@ -52,6 +52,25 @@ class CoralHead(nn.Module):
     def forward(self, x):
         return self.fc(x) + self.bias  # (batch, num_classes-1): logits de P(y>k)
 
+    def inicializar_vies(self, y, suavizacao: float = 1.0) -> None:
+        """Começa cada limiar em logit(P(y > k)) observado no treino.
+
+        Com bias zero e a taxa de aprendizado do encoder (2e-5), os limiares
+        não saem do lugar em poucas épocas: a perda fica presa em ln 2 e o
+        modelo prevê a classe extrema (medido em 2026-10-14: acurácia 9%
+        com 85% dos rótulos em "3"). Partir das frequências marginais é a
+        inicialização usual para cabeças ordinais e faz o modelo começar,
+        no mínimo, na linha de base da classe majoritária.
+        """
+        import numpy as np
+
+        y = np.asarray(y)
+        k = self.bias.numel()
+        n = len(y)
+        p = np.array([((y > j + 1).sum() + suavizacao) / (n + 2 * suavizacao) for j in range(k)])
+        with torch.no_grad():
+            self.bias.copy_(torch.tensor(np.log(p / (1 - p)), dtype=self.bias.dtype))
+
 
 class BertimbauCoralClassifier(nn.Module):
     """Encoder (BERTimbau) + pooling [CLS] + CoralHead p/ D1 (dimensão

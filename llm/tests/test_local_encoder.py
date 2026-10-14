@@ -89,6 +89,48 @@ def test_coral_head_aprende_gradiente():
     assert (pred == y).all(), "cabeça deveria decorar 6 exemplos em 40 passos"
 
 
+def test_amostrar_prata_estratifica_por_ano_e_e_deterministica():
+    anos = [2011] * 100 + [2015] * 300 + [2023] * 600
+    df = pd.DataFrame({"item_id": range(1000),
+                       "data_publicacao": [f"{a}-06-01" for a in anos],
+                       "texto": "x", "d1": 3, "origem": "prata"})
+    a = dataset.amostrar_prata(df, 100, semente=7)
+    b = dataset.amostrar_prata(df, 100, semente=7)
+    assert len(a) == 100 and a["item_id"].tolist() == b["item_id"].tolist()
+    por_ano = pd.to_datetime(a["data_publicacao"]).dt.year.value_counts()
+    assert por_ano[2011] == 10 and por_ano[2015] == 30 and por_ano[2023] == 60
+    assert dataset.amostrar_prata(df, None) is df
+    assert len(dataset.amostrar_prata(df, 5000)) == 1000
+
+
+def test_dispositivo_auto_e_cpu():
+    torch = pytest.importorskip("torch")
+    from local_encoder import dispositivo as disp
+    assert disp.escolher("cpu").type == "cpu"
+    auto = disp.escolher("auto")
+    assert auto.type == ("cuda" if torch.cuda.is_available() else "cpu")
+    with disp.autocast(disp.escolher("cpu")):  # no-op na CPU
+        pass
+    if not torch.cuda.is_available():
+        with pytest.raises(RuntimeError):
+            disp.escolher("cuda")
+
+
+def test_coral_inicializar_vies_reproduz_frequencias():
+    torch = pytest.importorskip("torch")
+    from local_encoder.model import CoralHead
+    y = np.array([3] * 85 + [2] * 7 + [4] * 8)
+    head = CoralHead(in_features=4, num_classes=5)
+    head.inicializar_vies(y, suavizacao=0.0)
+    p = torch.sigmoid(head.bias).detach().numpy()
+    esperado = [(y > k).mean() for k in (1, 2, 3, 4)]
+    assert np.allclose(p[:3], esperado[:3], atol=1e-6)
+    assert p[3] < 1e-6  # nenhuma nota 5: P(y>4) ~ 0
+    # com entrada nula, a decodificação devolve a classe majoritária
+    pred = coral.coral_probs_to_label(torch.sigmoid(head(torch.zeros(1, 4))).detach().numpy())
+    assert pred[0] == 3
+
+
 if __name__ == "__main__":
     test_coral_targets_e_decodificacao_perfeita(); print("coral targets OK")
     test_coral_esperanca_monotonica_em_probs(); print("coral esperanca OK")

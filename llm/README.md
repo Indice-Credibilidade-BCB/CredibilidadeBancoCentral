@@ -58,6 +58,32 @@ Braço local (`local_encoder/`, opcional — só quem for treinar/rodar o
 BERTimbau precisa): `pip install torch transformers` (comentado no fim de
 `requirements.txt`; pesado, por isso fora do install padrão).
 
+Com placa NVIDIA, instale a variante CUDA do PyTorch — a padrão do pip é
+só-CPU e roda ~35× mais devagar:
+
+```bash
+pip install --force-reinstall --no-deps "torch==2.5.1+cu124" --index-url https://download.pytorch.org/whl/cu124
+python -c "import torch; print(torch.cuda.is_available())"   # deve imprimir True
+```
+
+`train.py` e `infer.py` usam a GPU sozinhos (`--dispositivo auto`) com
+float16 automático. Tempos medidos em 2026-10-14 (RTX 3070 Ti 8 GB × CPU de
+12 threads), BERTimbau base, textos de ~183 tokens:
+
+| etapa | GPU | CPU |
+|---|---|---|
+| treino | ~160 itens/s | ~4,5 itens/s |
+| inferência | ~575 itens/s | ~15 itens/s |
+| treino, 20 mil prata, 4 épocas | ~7 min | ~5 h |
+| pontuar o corpus inteiro (66 mil) | ~2 min | ~75 min |
+
+`--max-prata` (padrão 5.000, D7) amostra os rótulos-prata por ano;
+`--todos-blocos` roda a validação cruzada temporal completa (um treino por
+bloco). Resultado só com prata do Sabiá, validando no bloco mais recente:
+5 mil rótulos → kappa_qw 0,32; 20 mil → 0,59 (acurácia 88% contra 83% de
+prever sempre a classe "3"). A métrica é concordância com o professor, não
+com o ouro humano — que ainda não existe.
+
 ## Fluxo
 
 ```bash

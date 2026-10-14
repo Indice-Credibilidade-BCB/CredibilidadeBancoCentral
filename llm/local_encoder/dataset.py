@@ -55,6 +55,32 @@ def montar_exemplos(itens: pd.DataFrame, rotulos: pd.DataFrame,
     return df[["item_id", "data_publicacao", "texto", "d1", "origem"]]
 
 
+def amostrar_prata(ex_prata: pd.DataFrame, n_max: int | None, semente: int = 42,
+                   data_col: str = "data_publicacao") -> pd.DataFrame:
+    """Amostra até ``n_max`` exemplos prata, ESTRATIFICADA POR ANO.
+
+    D7 previa destilação com 2–5 mil rótulos-prata (o corpus inteiro tem
+    ~66 mil; treinar com todos custa ~13× mais e não melhora a régua, que é
+    ancorada pelo ouro humano). A estratificação por ano preserva a
+    cobertura temporal — a amostra aleatória simples sub-representaria os
+    anos com pouco corpus (2011–2018), justamente os que a validação por
+    blocos temporais precisa ver. Determinística dada a ``semente``.
+    ``n_max=None`` ou ``>= len`` devolve tudo.
+    """
+    if n_max is None or n_max >= len(ex_prata):
+        return ex_prata
+    anos = pd.to_datetime(ex_prata[data_col], format="mixed").dt.year
+    frac = n_max / len(ex_prata)
+    partes = []
+    for ano, g in ex_prata.groupby(anos):
+        k = max(1, int(round(len(g) * frac)))
+        partes.append(g.sample(n=min(k, len(g)), random_state=semente + int(ano)))
+    amostra = pd.concat(partes)
+    if len(amostra) > n_max:  # arredondamento por ano pode passar um pouco
+        amostra = amostra.sample(n=n_max, random_state=semente)
+    return amostra.sort_values(data_col)
+
+
 def dividir_blocos_temporais(df: pd.DataFrame, data_col: str = "data_publicacao",
                              n_blocos: int = 5) -> pd.Series:
     """Atribui cada linha a um bloco 0..n_blocos-1 por QUANTIL de data (não

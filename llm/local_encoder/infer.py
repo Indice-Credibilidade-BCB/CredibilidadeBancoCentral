@@ -20,17 +20,19 @@ import datetime as dt
 import json
 import pathlib
 import sys
+import time
 
 import pandas as pd
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 import schema  # noqa: E402
 
+from . import dispositivo as disp  # noqa: E402
 from .coral import coral_probs_to_label  # noqa: E402
 from .dataset import montar_texto  # noqa: E402
 
 
-def carregar_modelo(checkpoint_dir: pathlib.Path):
+def carregar_modelo(checkpoint_dir: pathlib.Path, dispositivo=None):
     import torch
     from transformers import AutoTokenizer
 
@@ -43,17 +45,23 @@ def carregar_modelo(checkpoint_dir: pathlib.Path):
                       weights_only=True)
     modelo = BertimbauCoralClassifier(ckpt["modelo_base"], ckpt["num_classes"])
     modelo.load_state_dict(ckpt["state_dict"])
+    if dispositivo is not None:
+        modelo = modelo.to(dispositivo)
     modelo.eval()
     tokenizer = AutoTokenizer.from_pretrained(checkpoint_dir)
     return modelo, tokenizer
 
 
 def pontuar(checkpoint_dir: str, input_path: str, out_path: str,
-           nivel_anonimizacao: str = "L1", batch_size: int = 16) -> None:
+           nivel_anonimizacao: str = "L1", batch_size: int = 64,
+           dispositivo: str = "auto", fp16: bool = True) -> None:
     import torch
 
+    dev = disp.escolher(dispositivo)
+    usar_fp16 = fp16 and dev.type == "cuda"
+    print(f"dispositivo: {disp.descrever(dev)}{' | float16 automático' if usar_fp16 else ''}")
     checkpoint_dir = pathlib.Path(checkpoint_dir)
-    modelo, tokenizer = carregar_modelo(checkpoint_dir)
+    modelo, tokenizer = carregar_modelo(checkpoint_dir, dev)
 
     itens = (pd.read_parquet(input_path) if input_path.endswith(".parquet")
             else pd.read_csv(input_path))
@@ -64,14 +72,19 @@ def pontuar(checkpoint_dir: str, input_path: str, out_path: str,
     variante = f"local_encoder|{nivel_anonimizacao}"
     nome_modelo = f"bertimbau_coral@{checkpoint_dir.name}"
 
-    with out.open("w", encoding="utf-8") as f, torch.no_grad():
-        for i in range(0, len(itens), batch_size):
+    t0 = time.time()
+    n_lotes = (len(itens) + batch_size - 1) // batch_size
+    with out.open("w", encoding="utf-8") as f, torch.no_grad(), disp.autocast(dev, usar_fp16):
+        for k, i in enumerate(range(0, len(itens), batch_size)):
             lote = itens.iloc[i:i + batch_size]
             textos = lote.apply(lambda r: montar_texto(r, nivel_anonimizacao), axis=1)
             enc = tokenizer(list(textos), padding=True, truncation=True,
-                            max_length=256, return_tensors="pt")
+                            max_length=256, return_tensors="pt").to(dev)
             logits = modelo(enc["input_ids"], enc["attention_mask"])
-            pred = coral_probs_to_label(torch.sigmoid(logits).numpy())
+            pred = coral_probs_to_label(torch.sigmoid(logits.float()).cpu().numpy())
+            if (k + 1) % 100 == 0 or k + 1 == n_lotes:
+                feitos = i + len(lote)
+                print(f"  {feitos}/{len(itens)} itens | {feitos / (time.time() - t0):.0f} itens/s", flush=True)
             for item_id, d1 in zip(lote["item_id"], pred):
                 rec = {
                     "item_id": item_id, "d1": int(d1), "d2": None, "d3": None,
@@ -82,7 +95,7 @@ def pontuar(checkpoint_dir: str, input_path: str, out_path: str,
                     "erro": None,
                 }
                 f.write(json.dumps(rec, ensure_ascii=False) + "\n")
-    print(f"Concluído: {out}")
+    print(f"Concluído: {out} ({len(itens)} itens em {(time.time() - t0) / 60:.1f} min)")
 
 
 if __name__ == "__main__":
@@ -92,6 +105,9 @@ if __name__ == "__main__":
     ap.add_argument("--out", required=True)
     ap.add_argument("--nivel-anonimizacao", default="L1",
                     choices=["L1", "L2", "L3", "L4"])
-    ap.add_argument("--batch-size", type=int, default=16)
+    ap.add_argument("--batch-size", type=int, default=64)
+    ap.add_argument("--dispositivo", default="auto", choices=["auto", "cuda", "cpu"])
+    ap.add_argument("--sem-fp16", action="store_true", help="desliga float16 automático na GPU")
     a = ap.parse_args()
-    pontuar(a.checkpoint, a.input, a.out, a.nivel_anonimizacao, a.batch_size)
+    pontuar(a.checkpoint, a.input, a.out, a.nivel_anonimizacao, a.batch_size,
+            dispositivo=a.dispositivo, fp16=not a.sem_fp16)

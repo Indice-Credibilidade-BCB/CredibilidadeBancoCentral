@@ -46,6 +46,7 @@ Notas da auditoria (2026-08-18):
 """
 from __future__ import annotations
 
+import functools
 import pathlib
 import re
 
@@ -59,6 +60,19 @@ REGIME_INICIO = pd.Timestamp("1999-07-01")  # decreto do regime de metas
 
 
 def _cfg() -> dict:
+    """config.yaml parseado, em cache (invalidado se o arquivo mudar).
+
+    `anonimizar` chama isto por campo de texto; reler e reparsear o YAML a
+    cada chamada custava ~17 ms/item (~19 min no corpus de 66 mil itens) —
+    medido em 2026-10-14. A chave de cache é o mtime do arquivo, então uma
+    edição no config durante o processo continua sendo vista.
+    """
+    p = ROOT / "config.yaml"
+    return _cfg_cache(p.stat().st_mtime_ns)
+
+
+@functools.lru_cache(maxsize=4)
+def _cfg_cache(_mtime_ns: int) -> dict:
     return yaml.safe_load((ROOT / "config.yaml").read_text(encoding="utf-8"))
 
 
