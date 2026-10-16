@@ -32,6 +32,7 @@ import pathlib
 import numpy as np
 import pandas as pd
 
+import sandbox
 import schema
 
 
@@ -182,15 +183,38 @@ def agregar_vmax_vmin(scores: pd.DataFrame, corpus: pd.DataFrame) -> pd.DataFram
     return out.reset_index(drop=True)
 
 
+def excluir_sandbox(scores: pd.DataFrame, manifesto: set | None = None) -> pd.DataFrame:
+    """Remove os itens da quarentena de desenvolvimento (D13).
+
+    A série de produção NUNCA inclui a quarentena: esses itens são usados para
+    iterar prompt e regras, e deixá-los na série publicada permitiria que a
+    calibração "visse" o agregado. Usa o manifesto congelado
+    (`sandbox.congelar_manifesto`); sem manifesto, cai para a regra de hash,
+    que é a mesma que gerou o manifesto.
+    """
+    ids = manifesto if manifesto is not None else sandbox.carregar_manifesto()
+    if ids:
+        mask = scores["item_id"].astype(str).isin(ids)
+    else:
+        mask = scores["item_id"].astype(str).map(sandbox.em_sandbox)
+    return scores.loc[~mask].copy()
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--scores", required=True)
     ap.add_argument("--corpus", required=True)
     ap.add_argument("--out", required=True)
+    ap.add_argument("--incluir-sandbox", action="store_true",
+                    help="NÃO usar em produção: inclui os itens da quarentena (D13)")
     a = ap.parse_args()
     corpus = (pd.read_parquet(a.corpus) if a.corpus.endswith(".parquet")
               else pd.read_csv(a.corpus))
     scores = carregar_scores(a.scores)
+    if not a.incluir_sandbox:
+        n0 = len(scores)
+        scores = excluir_sandbox(scores)
+        print(f"Quarentena (D13): {n0 - len(scores)} linhas de itens em sandbox excluídas.")
     if "variante_vazamento" in scores.columns and \
             set(scores["variante_vazamento"].dropna().unique()) >= {"vmax", "vmin"}:
         out = agregar_vmax_vmin(scores, corpus)

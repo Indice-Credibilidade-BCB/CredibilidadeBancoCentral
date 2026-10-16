@@ -27,7 +27,7 @@ import pandas as pd
 import yaml
 
 ROOT = pathlib.Path(__file__).parent.parent
-NIVEIS_ESCADA = ("L1", "L2", "L3", "L4")
+NIVEIS_ESCADA = ("L1", "L2", "L3", "L4", "L5")  # L5 adicionado em 2026-10-15
 
 EAM_MIN_CEGUEIRA = 4.0
 ACC_MAX_CEGUEIRA = 0.25

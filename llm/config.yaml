@@ -81,15 +81,19 @@ request:
 pilot:
   n_itens: 50
   seed: 42
-  # Estratos temporais (episódios de tensão + calmaria). Ajustar à cobertura do corpus.
+  # Estratos temporais (episódios). Ajustados em 2026-10-15 à cobertura real do
+  # corpus (2011-01 a 2026-09): os episódios 2002-03 e 2008-09 do desenho
+  # original não têm itens. Seis estratos contíguos cobrindo todo o período,
+  # o que preserva a taxa-base de 1/6 do critério de cegueira do T0 (D11).
+  # Desenho original (para registro): 2002-03, 2008-09, 2013-16, 2020-21,
+  # 2022-24 e calmaria 2006-07 + 2017-19.
   strata:
-    - {label: "2002-03 eleicao/transicao",        start: "2002-01-01", end: "2003-12-31", n: 8}
-    - {label: "2008-09 crise global",             start: "2008-06-01", end: "2009-12-31", n: 8}
+    - {label: "2011-12 afrouxamento",             start: "2011-01-01", end: "2012-12-31", n: 9}
     - {label: "2013-16 fiscal/impeachment",       start: "2013-01-01", end: "2016-12-31", n: 9}
-    - {label: "2020-21 covid",                    start: "2020-03-01", end: "2021-12-31", n: 8}
-    - {label: "2022-24 aperto/tensao politica",   start: "2022-01-01", end: "2024-12-31", n: 9}
-    - {label: "calmaria 2006-07 e 2017-19",       start: "2006-01-01", end: "2019-12-31", n: 8,
-       windows: [["2006-01-01","2007-12-31"], ["2017-01-01","2019-12-31"]]}
+    - {label: "2017-19 desinflacao/calmaria",     start: "2017-01-01", end: "2019-12-31", n: 8}
+    - {label: "2020-21 covid",                    start: "2020-01-01", end: "2021-12-31", n: 8}
+    - {label: "2022-24 aperto/tensao politica",   start: "2022-01-01", end: "2024-12-31", n: 8}
+    - {label: "2025-26 meta continua",            start: "2025-01-01", end: "2026-12-31", n: 8}
   n_validacao_filtro: 10   # itens extras (procedurais/limítrofes) só p/ validar o filtro de relevância
 
 # --- Anonimização (T3 e treino do encoder local) ---
@@ -108,3 +112,16 @@ anonimizacao:
      Jair Bolsonaro, Bolsonaro, Pedro Malan, Malan, Antonio Palocci, Palocci,
      Guido Mantega, Mantega, Joaquim Levy, Nelson Barbosa, Paulo Guedes,
      Guedes, Fernando Haddad, Haddad]
+  # L5 (adicionado em 2026-10-15, após o T0 reprovar L1-L4 no Gemini): termos
+  # que datam o texto por si só. Casamento sem distinção de maiúsculas, com
+  # fronteira de palavra. Ver diagnostics/leakage.py:_mascarar_l5.
+  termos_epoca:
+    [covid, covid-19, coronavírus, coronavirus, pandemia, quarentena, lockdown,
+     impeachment, pedaladas, Lava Jato, mensalão, petrolão, Copa do Mundo,
+     Olimpíada, Olimpíadas, teto de gastos, teto dos gastos, arcabouço fiscal,
+     novo arcabouço, PEC dos precatórios, PEC da Transição, PEC Kamikaze,
+     reforma da Previdência, reforma tributária, autonomia do Banco Central,
+     autonomia do BC, Pix, Drex, Brexit, Trump, Biden, guerra comercial,
+     Ucrânia, Rússia, Evergrande, Silicon Valley Bank, SVB, tarifaço,
+     meta contínua, Bolsa Família, Auxílio Brasil, auxílio emergencial,
+     Fome Zero, Copom extraordinário]

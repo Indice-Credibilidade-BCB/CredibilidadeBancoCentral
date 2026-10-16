@@ -158,6 +158,38 @@ def _mascarar_numericos(texto: str) -> str:
     return t
 
 
+# ---------------------------------------------------------------------------
+# L5 — adicionado em 2026-10-15 depois que o T0 reprovou L1-L4 no Gemini
+# (EAM ~1,9 ano, acurácia de episódio ~70%). Além de L4: TODOS os números,
+# termos de época (config `termos_epoca`) e nomes próprios restantes. O
+# veículo também sai — a omissão é feita por quem monta a mensagem
+# (`aplicar_anonimizacao` e `t0_probe.py`), porque não é campo de texto.
+# ---------------------------------------------------------------------------
+
+_RE_NUMERO = re.compile(r"(?:R\$\s*)?\d[\d.,]*(?:\s*%|\s*pontos?(?:\s*percentuais)?|\s*p\.p\.)?")
+# Nome próprio: palavra capitalizada que NÃO começa frase (precedida de letra
+# minúscula, vírgula, dois-pontos etc. + espaço). Sequências viram um só token.
+_RE_NOME_PROPRIO = re.compile(
+    r"(?<=[a-zà-ú0-9,;:)\]] )(?:[A-ZÀ-Ú][\wà-ú]+|[A-Z]{2,})(?:\s+(?:de|da|do|dos|das|e)?\s*[A-ZÀ-Ú][\wà-ú]+)*")
+# Siglas genéricas do domínio que NÃO datam o texto ficam (o modelo precisa delas para ler o conteúdo).
+_SIGLAS_MANTIDAS = {"BC", "BCB", "Copom", "Selic", "IPCA", "IPCA-15", "IGP-M", "PIB", "Focus", "Fed",
+                    "Tesouro", "Banco Central", "Banco Central do Brasil", "CMN", "Fazenda", "Congresso",
+                    "Planalto", "Executivo", "Bolsa", "Ibovespa", "B3", "DI", "CDI", "FMI", "EUA"}
+
+
+@functools.lru_cache(maxsize=4)
+def _re_termos_epoca(chave: tuple) -> re.Pattern:
+    termos = sorted(chave, key=len, reverse=True)
+    return re.compile(r"\b(?:" + "|".join(re.escape(t) for t in termos) + r")\b", re.IGNORECASE)
+
+
+def _mascarar_l5(texto: str, termos: tuple) -> str:
+    t = _re_termos_epoca(termos).sub("[EPOCA]", texto)
+    t = _RE_NUMERO.sub("[NUM]", t)
+    t = _RE_NOME_PROPRIO.sub(lambda m: m.group(0) if m.group(0) in _SIGLAS_MANTIDAS else "[NOME]", t)
+    return t
+
+
 def anonimizar(texto: str, nivel: str) -> str:
     """Escada de anonimização (D11/4.2.4): L1 datas; L2 +autoridades do BC;
     L3 +políticos; L4 +numéricos (Selic/IPCA/câmbio/PIB). Cada nível inclui
@@ -167,16 +199,18 @@ def anonimizar(texto: str, nivel: str) -> str:
     # NaN (float) é "truthy" em Python — `texto or ""` NÃO pega esse caso e
     # `.sub()` quebra com TypeError. pd.isna cobre None, NaN e NaT.
     t = "" if pd.isna(texto) else str(texto)
-    if nivel in ("L1", "L2", "L3", "L4"):
+    if nivel in ("L1", "L2", "L3", "L4", "L5"):
         t = _RE_DATAS.sub("[DATA]", t)
-    if nivel in ("L2", "L3", "L4"):
+    if nivel in ("L2", "L3", "L4", "L5"):
         for nome in sorted(cfg["autoridades_bc"], key=len, reverse=True):
             t = _padrao_nome(nome).sub("[AUTORIDADE_BC]", t)
-    if nivel in ("L3", "L4"):
+    if nivel in ("L3", "L4", "L5"):
         for nome in sorted(cfg["politicos"], key=len, reverse=True):
             t = _padrao_nome(nome).sub("[POLITICO]", t)
-    if nivel == "L4":
+    if nivel in ("L4", "L5"):
         t = _mascarar_numericos(t)
+    if nivel == "L5":
+        t = _mascarar_l5(t, tuple(cfg.get("termos_epoca", [])))
     return t
 
 
@@ -185,6 +219,8 @@ def aplicar_anonimizacao(itens: pd.DataFrame, nivel: str) -> pd.DataFrame:
     for col in ("titulo", "lead", "paragrafo_1"):
         if col in df.columns:
             df[col] = df[col].map(lambda s: anonimizar(s, nivel))
+    if nivel == "L5" and "veiculo" in df.columns:
+        df["veiculo"] = "não informado"  # o veículo também data o texto (ex.: Money Times só existe desde 2016)
     return df
 
 

@@ -233,12 +233,12 @@ if __name__ == "__main__":
     ap.add_argument("--mode", choices=["piloto", "producao"], default="piloto")
     ap.add_argument("--out", required=True)
     ap.add_argument("--date-mode", choices=["real", "omitida", "trocada"], default="real")
-    ap.add_argument("--anonimizacao", choices=["nenhuma", "L1", "L2", "L3", "L4"],
+    ap.add_argument("--anonimizacao", choices=["nenhuma", "L1", "L2", "L3", "L4", "L5"],
                     default="nenhuma")
     ap.add_argument("--dupla-vmax-vmin", action="store_true",
                     help="D12: pontua cada item 2x (texto integral + nivel-vmin) "
                          "no mesmo arquivo, distinguido por variante_vazamento")
-    ap.add_argument("--nivel-vmin", choices=["L1", "L2", "L3", "L4"], default="L2",
+    ap.add_argument("--nivel-vmin", choices=["L1", "L2", "L3", "L4", "L5"], default="L2",
                     help="nível aprovado no T0 (t0_probe.py) para a variante V-min")
     a = ap.parse_args()
     score_batch(a.provider, a.input, a.mode, a.out, a.date_mode, a.anonimizacao,

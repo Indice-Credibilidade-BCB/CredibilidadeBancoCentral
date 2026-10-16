@@ -94,6 +94,8 @@ def rodar(provider_name: str, input_path: str, out_path: str,
                 item = {k: anonimizar(row.get(k), nivel) if k in
                         ("titulo", "lead", "paragrafo_1") else row.get(k)
                         for k in ("veiculo", "titulo", "lead", "paragrafo_1")}
+                if nivel == "L5":
+                    item["veiculo"] = "não informado"  # ver diagnostics.leakage (L5)
                 user = prompts.build_user_msg_t0(item)
                 texto, erro = None, None
                 for tent in range(cfg["request"].get("max_retries", 5)):
