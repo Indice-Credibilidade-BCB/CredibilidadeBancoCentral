@@ -124,16 +124,19 @@ def test_parser_d1_nulo_vira_neutro():
     """Achado real rodando o Sabiá (01/09/2026): o provedor às vezes devolve
     d1=null (em vez de 3) quando não vê menção ao BCB/meta. D1 nunca deveria
     ser nulo (D4); coagir para 3 evita perder ~40% dos itens como
-    'parse_falhou' só porque o provedor não seguiu a instrução à risca."""
+    'parse_falhou' só porque o provedor não seguiu a instrução à risca.
+
+    Regra da v1.0, preservada para reproduzir a série do apêndice. Na v1.1
+    (2026-10-18) d1 nulo passa a ser "sem sinal" (ver test_prompt_v11.py)."""
     ok = scorer.parse_json_resposta(
-        '{"d1": null, "d2": null, "d2_sem_sinal": true, "d3": 3, "d3_sem_sinal": false}')
+        '{"d1": null, "d2": null, "d2_sem_sinal": true, "d3": 3, "d3_sem_sinal": false}', "v1.0")
     assert ok["d1"] == 3
     assert ok["d3"] == 3
     # d1 ausente da resposta (não só null) tem que cair na mesma regra
-    ok2 = scorer.parse_json_resposta('{"d2": 2}')
+    ok2 = scorer.parse_json_resposta('{"d2": 2}', "v1.0")
     assert ok2["d1"] == 3
     # mas d1 fora da escala (resposta de fato garbled) continua falha real
-    assert scorer.parse_json_resposta('{"d1": 7}') is None
+    assert scorer.parse_json_resposta('{"d1": 7}', "v1.0") is None
 
 
 def test_scorer_variante_inclui_modo():

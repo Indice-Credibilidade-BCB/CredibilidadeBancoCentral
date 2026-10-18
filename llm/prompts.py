@@ -1,17 +1,19 @@
 # -*- coding: utf-8 -*-
-"""Prompts v1.0 do índice de credibilidade do BCB.
+"""Prompts do índice de credibilidade do BCB (v1.1 corrente; v1.0 preservada).
 
 Fonte única de verdade. Qualquer alteração => incrementar PROMPT_VERSION
 (mudança de prompt em produção = potencial quebra estrutural; exige janela
 de sobreposição, como troca de modelo).
 """
 
-PROMPT_VERSION = "v1.0"
+# Versão corrente. A v1.0 continua definida abaixo (sufixo _V10) para
+# reproduzir a série original, publicada como robustez no apêndice.
+PROMPT_VERSION = "v1.1"
 
 # ---------------------------------------------------------------------------
 # Sistema — PILOTO (JSON estruturado com justificativa breve)
 # ---------------------------------------------------------------------------
-PROMPT_SISTEMA_PILOTO = """Você é um anotador para pesquisa acadêmica em macroeconomia. Sua tarefa é ler o trecho de uma notícia ou relatório sobre o Banco Central do Brasil (BCB) e avaliar EXCLUSIVAMENTE a percepção que o TEXTO transmite, na data de publicação indicada.
+PROMPT_SISTEMA_PILOTO_V10 = """Você é um anotador para pesquisa acadêmica em macroeconomia. Sua tarefa é ler o trecho de uma notícia ou relatório sobre o Banco Central do Brasil (BCB) e avaliar EXCLUSIVAMENTE a percepção que o TEXTO transmite, na data de publicação indicada.
 
 RESTRIÇÃO TEMPORAL ABSOLUTA: comporte-se como se você estivesse na data de publicação. Não use nenhum conhecimento sobre eventos, dados, decisões ou desfechos posteriores a essa data. Não use conhecimento externo sobre "o que aconteceu depois". Baseie-se apenas no que o texto afirma ou implica.
 
@@ -55,10 +57,47 @@ Responda SOMENTE com JSON válido, sem markdown, no formato:
 # ---------------------------------------------------------------------------
 # Sistema — PRODUÇÃO (saída numérica mínima; sem justificativa)
 # ---------------------------------------------------------------------------
-PROMPT_SISTEMA_PRODUCAO = PROMPT_SISTEMA_PILOTO.split("Responda SOMENTE")[0] + (
+PROMPT_SISTEMA_PRODUCAO_V10 = PROMPT_SISTEMA_PILOTO_V10.split("Responda SOMENTE")[0] + (
     "Responda SOMENTE com JSON válido, sem markdown, no formato:\n"
     '{"d1": <1-5>, "d2": <1-5 ou null>, "d3": <1-5 ou null>}'
 )
+
+# ---------------------------------------------------------------------------
+# v1.1 (2026-10-18) — revisão pós-congelamento, registrada sob a D13.
+#
+# Mudança única: na v1.0 a nota 3 da D1 juntava "neutro/incerto" com "sem
+# sinal claro sobre a meta", e o parser ainda convertia d1 nulo em 3. A
+# v1.1 separa os dois casos: texto sem nenhum sinal sobre o cumprimento da
+# meta recebe d1_sem_sinal = true e d1 = null (fica FORA da média, como já
+# acontecia em D2/D3), e o 3 passa a significar "há sinal, mas
+# equilibrado". Motivação: a definição da escala, não o resultado da série.
+# Testada só na quarentena (dados/llm/teste_prompt_v11/). A série v1.0 vai
+# para o apêndice do Paper 1.
+# ---------------------------------------------------------------------------
+_D1_V10 = PROMPT_SISTEMA_PILOTO_V10[PROMPT_SISTEMA_PILOTO_V10.index("D1 —"):PROMPT_SISTEMA_PILOTO_V10.index("D2 —")]
+_D1_V11 = """D1 — Probabilidade percebida de cumprimento da meta de inflação (dimensão principal).
+Primeiro decida se o texto traz ALGUM sinal sobre o cumprimento da meta: projeções ou expectativas de inflação comparadas à meta, avaliação de que a inflação converge para a meta ou se afasta dela, menção a estouro da meta ou carta aberta, ou juízo sobre a capacidade do BCB de trazer a inflação à meta.
+Se o texto NÃO traz nenhum sinal desse tipo (por exemplo: relato da decisão de juros sem referência à meta, agenda, dado isolado sem relação com a meta, câmbio, bolsa ou política fiscal sem menção à inflação e à meta), marque d1_sem_sinal = true e d1 = null.
+Se há sinal, o texto trata a meta como provável de ser cumprida?
+1 = descumprimento tratado como certo ou já consumado
+2 = cumprimento tratado como improvável
+3 = sinal presente, mas equilibrado ou incerto (o texto pesa riscos para os dois lados)
+4 = cumprimento tratado como provável
+5 = cumprimento tratado como certo / inflação sob controle
+
+"""
+_CORPO_V11 = PROMPT_SISTEMA_PILOTO_V10.replace(_D1_V10, _D1_V11).split("Responda SOMENTE")[0]
+PROMPT_SISTEMA_PILOTO_V11 = _CORPO_V11 + (
+    "Responda SOMENTE com JSON válido, sem markdown, no formato:\n"
+    '{"d1": <1-5 ou null>, "d1_sem_sinal": <true/false>, "d2": <1-5 ou null>, "d2_sem_sinal": <true/false>, '
+    '"d3": <1-5 ou null>, "d3_sem_sinal": <true/false>, "justificativa": "<até 30 palavras>"}')
+PROMPT_SISTEMA_PRODUCAO_V11 = _CORPO_V11 + (
+    "Responda SOMENTE com JSON válido, sem markdown, no formato:\n"
+    '{"d1": <1-5 ou null>, "d1_sem_sinal": <true/false>, "d2": <1-5 ou null>, "d3": <1-5 ou null>}')
+
+# Aliases da versão corrente (o resto do código importa estes nomes).
+PROMPT_SISTEMA_PILOTO = PROMPT_SISTEMA_PILOTO_V11
+PROMPT_SISTEMA_PRODUCAO = PROMPT_SISTEMA_PRODUCAO_V11
 
 # ---------------------------------------------------------------------------
 # Mensagem de usuário por item
@@ -141,7 +180,17 @@ Responda SOMENTE com JSON: {"relevante": <true/false>}"""
 # ---------------------------------------------------------------------------
 import hashlib as _hashlib  # noqa: E402
 
-PROMPT_HASH = _hashlib.sha256("\n".join([
-    PROMPT_VERSION, PROMPT_SISTEMA_PILOTO, PROMPT_SISTEMA_PRODUCAO,
-    PROMPT_SISTEMA_T0, PROMPT_RELEVANCIA,
-]).encode("utf-8")).hexdigest()[:16]
+def _hash(versao: str, piloto: str, producao: str) -> str:
+    return _hashlib.sha256("\n".join([
+        versao, piloto, producao, PROMPT_SISTEMA_T0, PROMPT_RELEVANCIA,
+    ]).encode("utf-8")).hexdigest()[:16]
+
+
+PROMPT_HASH_V10 = _hash("v1.0", PROMPT_SISTEMA_PILOTO_V10, PROMPT_SISTEMA_PRODUCAO_V10)  # = 9515662efc0dbc2e
+PROMPT_HASH_V11 = _hash("v1.1", PROMPT_SISTEMA_PILOTO_V11, PROMPT_SISTEMA_PRODUCAO_V11)
+PROMPT_HASH = PROMPT_HASH_V11
+
+VERSOES = {
+    "v1.0": {"piloto": PROMPT_SISTEMA_PILOTO_V10, "producao": PROMPT_SISTEMA_PRODUCAO_V10, "hash": PROMPT_HASH_V10},
+    "v1.1": {"piloto": PROMPT_SISTEMA_PILOTO_V11, "producao": PROMPT_SISTEMA_PRODUCAO_V11, "hash": PROMPT_HASH_V11},
+}

@@ -139,6 +139,13 @@ PYTHONPATH=. python -m pytest tests/ -q
 
 ## Notas operacionais
 
+- **Versão do prompt.** A corrente é a **v1.1** (2026-10-18): a D1 ganhou
+  "sem sinal" (texto que não fala da meta fica fora da média) e cada mês sai
+  com `taxa_d1_sem_sinal`. A v1.0 continua disponível para reproduzir a
+  série do apêndice: `python scorer.py ... --prompt-versao v1.0`. As duas
+  versões têm chaves de cache e hashes distintos; use arquivos de saída
+  separados.
+
 - **Retomada:** linhas com `erro` são reprocessadas ao reexecutar o mesmo
   comando; a agregação deduplica por `cache_key` mantendo o último sucesso.
   Ao bater o teto diário (RPD), o job encerra limpo e retoma no dia seguinte.

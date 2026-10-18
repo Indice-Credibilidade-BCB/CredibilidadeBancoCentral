@@ -42,10 +42,13 @@ def carregar_scores(jsonl_path: str) -> pd.DataFrame:
     df = pd.DataFrame(recs)
     # Reexecuções reprocessam itens que falharam: pode haver mais de uma linha
     # por cache_key. Mantém a ÚLTIMA com d1 válido.
-    df = df[df["d1"].notna()]
+    # v1.1: d1 nulo com d1_sem_sinal = True é resposta válida (texto sem sinal
+    # sobre a meta) — fica para a taxa de sem-sinal, mas fora da média.
+    sem = df["d1_sem_sinal"].eq(True) if "d1_sem_sinal" in df.columns else False
+    df = df[df["d1"].notna() | sem]
     if "cache_key" in df.columns:
         df = df.drop_duplicates(subset="cache_key", keep="last")
-    cols = ["item_id", "d1", "d2", "d3", "provider", "model", "prompt_version",
+    cols = ["item_id", "d1", "d1_sem_sinal", "d2", "d3", "provider", "model", "prompt_version",
             "variante_vazamento"]  # D12: presente só quando o scorer rodou dupla_vmax_vmin
     return df[[c for c in cols if c in df.columns]]
 
@@ -102,6 +105,12 @@ def _agregar_core(scores: pd.DataFrame, corpus: pd.DataFrame) -> pd.DataFrame:
         if d in df.columns:
             df[d] = pd.to_numeric(df[d], errors="coerce")
             df[f"{d}_sem_sinal"] = df[d].isna()
+    # Taxa de itens SEM sinal sobre a meta (v1.1), antes de descartá-los da média.
+    tem_sem_sinal = "d1_sem_sinal" in df.columns and df["d1_sem_sinal"].notna().any()
+    if tem_sem_sinal:
+        flag = df["d1_sem_sinal"].eq(True)
+        taxa_d1 = flag.groupby(df["mes"]).mean()
+        n_total = df.groupby("mes").size()
     df = df.dropna(subset=["c"])
 
     # (2) colapsa wire: 1 observação por (mês, cluster)
@@ -140,6 +149,9 @@ def _agregar_core(scores: pd.DataFrame, corpus: pd.DataFrame) -> pd.DataFrame:
                 linha[f"taxa_{d}_sem_sinal"] = g[f"{d}_sem_sinal"].mean()
         linhas.append(linha)
     out = pd.DataFrame(linhas)
+    if tem_sem_sinal:
+        out["taxa_d1_sem_sinal"] = out["mes"].map(taxa_d1)
+        out["n_itens_total"] = out["mes"].map(n_total)
     # O ajuste aditivo de FE pode extrapolar [0,1] em meses ralos (poucos
     # itens). NÃO truncar a série usada nos Blocos 2/3/6: censurar nas
     # bordas atenuaria a variância exatamente nos episódios extremos, que

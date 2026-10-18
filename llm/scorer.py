@@ -38,13 +38,35 @@ def load_cfg() -> dict:
     return yaml.safe_load((ROOT / "config.yaml").read_text(encoding="utf-8"))
 
 
-def cache_key(provider: str, model: str, item_id: str, variante: str) -> str:
-    raw = f"{provider}|{model}|{prompts.PROMPT_VERSION}|{item_id}|{variante}"
+def cache_key(provider: str, model: str, item_id: str, variante: str,
+              versao: str | None = None) -> str:
+    raw = f"{provider}|{model}|{versao or prompts.PROMPT_VERSION}|{item_id}|{variante}"
     return hashlib.sha1(raw.encode()).hexdigest()
 
 
-def parse_json_resposta(texto: str) -> dict | None:
-    """Extrai o primeiro objeto JSON da resposta (tolera cercas de markdown)."""
+def _campos_por_regex(bloco: str) -> dict | None:
+    """Fallback para JSON malformado: extrai d1..d3 e os *_sem_sinal por regex.
+    Exige ao menos o campo d1 (número ou null) para aceitar a resposta."""
+    obj = {}
+    for k in ("d1", "d2", "d3"):
+        m = re.search(rf'"{k}"\s*:\s*(null|\d+(?:\.0)?)', bloco)
+        if m:
+            obj[k] = None if m.group(1) == "null" else int(float(m.group(1)))
+    for k in ("d1_sem_sinal", "d2_sem_sinal", "d3_sem_sinal"):
+        m = re.search(rf'"{k}"\s*:\s*(true|false)', bloco)
+        if m:
+            obj[k] = m.group(1) == "true"
+    return obj if "d1" in obj else None
+
+
+def parse_json_resposta(texto: str, versao: str | None = None) -> dict | None:
+    """Extrai o primeiro objeto JSON da resposta (tolera cercas de markdown).
+
+    v1.1: d1 nulo (ou d1_sem_sinal = true) é resposta VÁLIDA — o texto não
+    traz sinal sobre a meta; d1 fica None e d1_sem_sinal = True.
+    v1.0: comportamento original preservado (d1 nulo vira 3) para que a
+    série do apêndice seja reproduzível."""
+    versao = versao or prompts.PROMPT_VERSION
     texto = re.sub(r"```(json)?", "", texto).strip()
     m = re.search(r"\{.*\}", texto, re.DOTALL)
     if not m:
@@ -52,7 +74,12 @@ def parse_json_resposta(texto: str) -> dict | None:
     try:
         obj = json.loads(m.group(0))
     except json.JSONDecodeError:
-        return None
+        # O sabiazinho às vezes duplica aspas na chave (`""d1_sem_sinal": true`,
+        # `" "d1_sem_sinal"`) — ~10% das respostas no teste da v1.1 com o
+        # formato novo. O conteúdo é inequívoco: recupera os campos por regex.
+        obj = _campos_por_regex(m.group(0))
+        if obj is None:
+            return None
     def _nota(v):
         """Aceita int ou float integral (modelos às vezes emitem 4.0)."""
         if isinstance(v, bool):
@@ -62,6 +89,17 @@ def parse_json_resposta(texto: str) -> dict | None:
         return v if isinstance(v, int) and 1 <= v <= 5 else None
 
     d1_bruto = obj.get("d1")
+    if versao != "v1.0":
+        sem = obj.get("d1_sem_sinal") is True or d1_bruto is None
+        if sem:
+            obj["d1"], obj["d1_sem_sinal"] = None, True
+        else:
+            obj["d1"], obj["d1_sem_sinal"] = _nota(d1_bruto), False
+            if obj["d1"] is None:
+                return None
+        for k in ("d2", "d3"):
+            obj[k] = _nota(obj.get(k))
+        return obj
     if d1_bruto is None:
         # D1 nunca deveria ser nulo (D4: corpus já filtrado por relevância;
         # "sem sinal claro" já tem representação própria — nota 3). Na
@@ -120,7 +158,8 @@ def _carregar_ja_feitos(out: pathlib.Path) -> set:
         for line in out.read_text(encoding="utf-8").splitlines():
             try:
                 rec = json.loads(line)
-                if rec.get("erro") is None and rec.get("d1") is not None:
+                if rec.get("erro") is None and (rec.get("d1") is not None
+                                                or rec.get("d1_sem_sinal") is True):
                     ja_feitos.add(rec["cache_key"])
             except (json.JSONDecodeError, KeyError):
                 pass
@@ -130,12 +169,13 @@ def _carregar_ja_feitos(out: pathlib.Path) -> set:
 def _rodar_passada(df: pd.DataFrame, cfg: dict, provider, provider_name: str,
                    system: str, date_mode: str, variante: str,
                    variante_vazamento: str | None, limiter: "RateLimiter",
-                   ja_feitos: set, out_handle) -> bool:
+                   ja_feitos: set, out_handle, versao: str | None = None) -> bool:
     """Roda uma passada de pontuação (um valor de anonimização) sobre `df`,
     já mascarado como esta passada exige. Retorna False se o teto diário foi
     atingido no meio da passada (chamador deve encerrar)."""
     for _, row in df.iterrows():
-        ck = cache_key(provider_name, provider.model, str(row["item_id"]), variante)
+        versao = versao or prompts.PROMPT_VERSION
+        ck = cache_key(provider_name, provider.model, str(row["item_id"]), variante, versao)
         if ck in ja_feitos:
             continue
         if not limiter.acquire():
@@ -151,21 +191,21 @@ def _rodar_passada(df: pd.DataFrame, cfg: dict, provider, provider_name: str,
             except Exception as e:  # noqa: BLE001 — backoff genérico p/ 429/5xx
                 erro = str(e)
                 time.sleep(min(2 ** tent * 5, 120))
-        parsed = parse_json_resposta(texto) if texto else None
+        parsed = parse_json_resposta(texto, versao) if texto else None
         rec = {
             "cache_key": ck,
             "item_id": row["item_id"],
             "provider": provider_name,
             "model": provider.model,
-            "prompt_version": prompts.PROMPT_VERSION,
-            "prompt_hash": prompts.PROMPT_HASH,  # D13: congelamento verificável
+            "prompt_version": versao,
+            "prompt_hash": prompts.VERSOES[versao]["hash"],  # D13: congelamento verificável
             "variante": variante,
             "variante_vazamento": variante_vazamento,  # "vmax"/"vmin"/None (D12)
             "ts": dt.datetime.now().isoformat(timespec="seconds"),
             "raw": texto,
             "erro": None if parsed else (erro or "parse_falhou"),
             **{k: (parsed or {}).get(k) for k in
-               ("d1", "d2", "d3", "d2_sem_sinal", "d3_sem_sinal", "justificativa")},
+               ("d1", "d1_sem_sinal", "d2", "d3", "d2_sem_sinal", "d3_sem_sinal", "justificativa")},
         }
         out_handle.write(json.dumps(rec, ensure_ascii=False) + "\n")
         out_handle.flush()
@@ -175,7 +215,8 @@ def _rodar_passada(df: pd.DataFrame, cfg: dict, provider, provider_name: str,
 
 def score_batch(provider_name: str, input_path: str, mode: str, out_path: str,
                 date_mode: str = "real", anonimizacao: str = "nenhuma",
-                dupla_vmax_vmin: bool = False, nivel_vmin: str = "L2") -> None:
+                dupla_vmax_vmin: bool = False, nivel_vmin: str = "L2",
+                prompt_versao: str | None = None) -> None:
     """Pontua o corpus. `dupla_vmax_vmin` (D12/pendência 5) roda CADA item
     duas vezes na mesma passagem — uma com `anonimizacao` (V-max, tipicamente
     "nenhuma": texto integral) e outra forçada no `nivel_vmin` (o nível
@@ -190,8 +231,9 @@ def score_batch(provider_name: str, input_path: str, mode: str, out_path: str,
     cfg = load_cfg()
     pcfg = cfg["providers"][provider_name]
     provider = make_provider(provider_name, pcfg, cfg["request"])
-    system = (prompts.PROMPT_SISTEMA_PILOTO if mode == "piloto"
-              else prompts.PROMPT_SISTEMA_PRODUCAO)
+    versao = prompt_versao or prompts.PROMPT_VERSION
+    textos = prompts.VERSOES[versao]
+    system = textos["piloto"] if mode == "piloto" else textos["producao"]
 
     cache_dir = ROOT / cfg["paths"]["cache_dir"]
     cache_dir.mkdir(parents=True, exist_ok=True)
@@ -220,7 +262,7 @@ def score_batch(provider_name: str, input_path: str, mode: str, out_path: str,
                 variante += f"|{rotulo}"  # sufixo de variante (pendência 5)
             continuar = _rodar_passada(df, cfg, provider, provider_name, system,
                                        date_mode, variante, rotulo, limiter,
-                                       ja_feitos, f)
+                                       ja_feitos, f, versao)
             if not continuar:
                 return
     print(f"Concluído: {out}")
@@ -240,6 +282,8 @@ if __name__ == "__main__":
                          "no mesmo arquivo, distinguido por variante_vazamento")
     ap.add_argument("--nivel-vmin", choices=["L1", "L2", "L3", "L4", "L5"], default="L2",
                     help="nível aprovado no T0 (t0_probe.py) para a variante V-min")
+    ap.add_argument("--prompt-versao", choices=sorted(prompts.VERSOES), default=prompts.PROMPT_VERSION,
+                    help="versão do prompt (padrão: a corrente; v1.0 reproduz a série do apêndice)")
     a = ap.parse_args()
     score_batch(a.provider, a.input, a.mode, a.out, a.date_mode, a.anonimizacao,
-               a.dupla_vmax_vmin, a.nivel_vmin)
+               a.dupla_vmax_vmin, a.nivel_vmin, a.prompt_versao)
