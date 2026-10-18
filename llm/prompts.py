@@ -95,6 +95,31 @@ PROMPT_SISTEMA_PRODUCAO_V11 = _CORPO_V11 + (
     "Responda SOMENTE com JSON válido, sem markdown, no formato:\n"
     '{"d1": <1-5 ou null>, "d1_sem_sinal": <true/false>, "d2": <1-5 ou null>, "d3": <1-5 ou null>}')
 
+# Empacotamento EM LOTE (2026-10-18, economia de tokens): o mesmo corpo da
+# v1.1 (D1-D3, regras, restrição temporal idênticos), com várias notícias por
+# chamada e saída compacta. Não é uma nova versão do instrumento, é outro
+# empacotamento — por isso só é usado depois do teste de equivalência
+# (lote × uma notícia por chamada) registrado em docs/local.
+PROMPT_SISTEMA_LOTE_V11 = _CORPO_V11 + (
+    "FORMATO EM LOTE: você receberá vários trechos, cada um iniciado por \"### TRECHO <n>\". "
+    "Avalie CADA trecho de forma totalmente independente, como se fosse o único: não compare "
+    "trechos entre si e não deixe a nota de um influenciar a de outro.\n\n"
+    "Responda SOMENTE com uma linha por trecho, na ordem, no formato:\n"
+    "<n>|<d1>|<d2>|<d3>\n"
+    "onde <d1> é 1 a 5, ou S se o texto não traz sinal sobre o cumprimento da meta; "
+    "<d2> e <d3> são 1 a 5, ou - quando o texto não aborda a dimensão. Nenhum outro texto.")
+
+
+def build_user_msg_lote(itens: list[dict], date_mode: str = "real") -> str:
+    """Mensagem de um lote: cada item no formato de `build_user_msg`,
+    precedido de '### TRECHO <n>' (n começa em 1)."""
+    partes = []
+    for k, item in enumerate(itens, start=1):
+        partes.append(f"### TRECHO {k}\n" + build_user_msg(item, date_mode=date_mode,
+                                                          data_falsa=item.get("data_falsa")))
+    return "\n\n".join(partes)
+
+
 # Aliases da versão corrente (o resto do código importa estes nomes).
 PROMPT_SISTEMA_PILOTO = PROMPT_SISTEMA_PILOTO_V11
 PROMPT_SISTEMA_PRODUCAO = PROMPT_SISTEMA_PRODUCAO_V11
@@ -194,3 +219,4 @@ VERSOES = {
     "v1.0": {"piloto": PROMPT_SISTEMA_PILOTO_V10, "producao": PROMPT_SISTEMA_PRODUCAO_V10, "hash": PROMPT_HASH_V10},
     "v1.1": {"piloto": PROMPT_SISTEMA_PILOTO_V11, "producao": PROMPT_SISTEMA_PRODUCAO_V11, "hash": PROMPT_HASH_V11},
 }
+PROMPT_HASH_V11_LOTE = _hash("v1.1-lote", PROMPT_SISTEMA_PILOTO_V11, PROMPT_SISTEMA_LOTE_V11)

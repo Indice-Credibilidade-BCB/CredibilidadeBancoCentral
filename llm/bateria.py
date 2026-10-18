@@ -65,6 +65,11 @@ def _scores(path: pathlib.Path, variante: str | None = None) -> pd.DataFrame:
     if not path.exists():
         return pd.DataFrame(columns=["item_id", "d1"])
     s = pd.read_json(path, lines=True)
+    # v1.1: "sem sinal" (d1 nulo) entra como o ponto neutro (3) nos testes de
+    # vazamento — senão só ~15% da amostra teria nota e T2/T3 perderiam o poder.
+    # Mudar de "com sinal" para "sem sinal" conta, assim, como mudança de nota.
+    if "d1_sem_sinal" in s.columns:
+        s.loc[s["d1"].isna() & s["d1_sem_sinal"].eq(True), "d1"] = 3
     s = s[s["erro"].isna() & s["d1"].notna()]
     if variante is not None:
         s = s[s["variante"] == variante]
@@ -98,10 +103,10 @@ def surpresa_futura(datas: pd.Series) -> pd.Series:
     return pd.Series(realizado - esperado, index=datas.index, name="surpresa_futura")
 
 
-def preparar(provider: str) -> None:
+def preparar(provider: str, n_por_estrato: int = N_POR_ESTRATO) -> None:
     DIR.mkdir(parents=True, exist_ok=True)
     corpus = pd.read_parquet(REPO / "dados" / "llm" / "corpus.parquet")
-    a = amostra_estratificada(corpus)
+    a = amostra_estratificada(corpus, n_por_estrato)
     a["surpresa_futura"] = surpresa_futura(a["data_publicacao"])
     a.to_csv(DIR / "amostra.csv", index=False)
     gerar_variantes_data(a).to_csv(DIR / "amostra_t2_trocada.csv", index=False)
@@ -139,7 +144,11 @@ def relatorio(provider: str, vmin_path: pathlib.Path | None = None,
     a = pd.read_csv(DIR / "amostra.csv")
     desf = a.set_index("item_id")["surpresa_futura"]
     datas = a.set_index("item_id")["data_publicacao"]
-    base = _scores(REPO / "dados" / "llm" / "scores" / f"producao_{provider}.jsonl", "producao|real|nenhuma")
+    # Base de T2/T3: DIR/base.jsonl se existir (amostra pontuada com o prompt
+    # corrente); senão, as notas de produção do provedor.
+    base_propria = DIR / "base.jsonl"
+    base = (_scores(base_propria, "producao|real|nenhuma") if base_propria.exists()
+            else _scores(REPO / "dados" / "llm" / "scores" / f"producao_{provider}.jsonl", "producao|real|nenhuma"))
     base = base[base["item_id"].isin(a["item_id"])]
     out: dict = {"provider": provider, "n_amostra": len(a), "n_base": len(base),
                  "criterios": {"rho_min": RHO_MIN, "alfa": ALFA}}
@@ -227,13 +236,17 @@ if __name__ == "__main__":
         sys.stdout.reconfigure(encoding="utf-8")
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
+    ap.add_argument("--dir", default=None, help="pasta da bateria (padrão dados/llm/bateria)")
     p1 = sub.add_parser("preparar"); p1.add_argument("--provider", required=True)
+    p1.add_argument("--n-por-estrato", type=int, default=N_POR_ESTRATO)
     p2 = sub.add_parser("relatorio"); p2.add_argument("--provider", required=True)
     p2.add_argument("--vmin", default=None, help="jsonl da passada V-min (para o T4)")
     p2.add_argument("--local", default=None, help="jsonl do braço local (para o T6)")
     a = ap.parse_args()
+    if a.dir:
+        DIR = pathlib.Path(a.dir)
     if a.cmd == "preparar":
-        preparar(a.provider)
+        preparar(a.provider, a.n_por_estrato)
     else:
         r = relatorio(a.provider, pathlib.Path(a.vmin) if a.vmin else None,
                       pathlib.Path(a.local) if a.local else None)
