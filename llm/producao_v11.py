@@ -183,6 +183,9 @@ def etapa_consolidar(provider: str) -> dict:
     serie = aggregate.agregar(sc, corpus)
     serie["mes"] = serie["mes"].astype(str)
     serie.to_csv(DERIV / f"indice_mensal_v11_{provider}.csv", index=False)
+    jm = aggregate.agregar_janela_movel(sc, corpus, 3)  # regra de 2026-10-19 (docs/local 4.2.14)
+    jm["mes"] = jm["mes"].astype(str)
+    jm.to_csv(DERIV / f"indice_mensal_v11_{provider}_jm3.csv", index=False)
 
     # Dupla V-max/V-min (só notícias pontuadas pela API, nas duas variantes)
     vmin = _validos(DIR / "scores_vmin.jsonl")
@@ -197,9 +200,10 @@ def etapa_consolidar(provider: str) -> dict:
         d.to_csv(DERIV / f"indice_mensal_v11_{provider}_vmax_vmin.csv", index=False)
 
     cont = contagens(prod, corpus, rot, rte, r)
-    (DERIV / "producao_v11_contagens.json").write_text(json.dumps(cont["total"], indent=2, ensure_ascii=False),
-                                                       encoding="utf-8")
-    cont["mensal"].to_csv(DERIV / "producao_v11_contagens_mensais.csv", index=False)
+    suf = "" if provider == "sabia" else f"_{provider}"  # Sabiá mantém os nomes já publicados
+    (DERIV / f"producao_v11_contagens{suf}.json").write_text(json.dumps(cont["total"], indent=2, ensure_ascii=False),
+                                                             encoding="utf-8")
+    cont["mensal"].to_csv(DERIV / f"producao_v11_contagens_mensais{suf}.csv", index=False)
     return cont["total"]
 
 
@@ -265,7 +269,12 @@ if __name__ == "__main__":
     ap.add_argument("--provider", default="sabia")
     ap.add_argument("--n-rotulagem", type=int, default=N_ROTULAGEM)
     ap.add_argument("--retreinar", action="store_true")
+    ap.add_argument("--dir", default=None,
+                    help="pasta de trabalho (outro provedor: copie rotulagem_ids.csv e roteamento.csv "
+                         "da pasta do Sabiá para reusar a amostra e o filtro)")
     a = ap.parse_args()
+    if a.dir:
+        DIR = pathlib.Path(a.dir)
     etapas = ["rotulagem", "filtro", "rotear", "pontuar", "vmin", "consolidar"] if a.etapa == "tudo" else [a.etapa]
     for e in etapas:
         print(f"== {e} ==", flush=True)
