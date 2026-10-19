@@ -61,3 +61,20 @@ def test_parse_recupera_json_com_aspas_duplicadas():
     r = scorer.parse_json_resposta('{"d1": 4,, "d1_sem_sinal": false}', "v1.1")
     assert r["d1"] == 4 and r["d1_sem_sinal"] is False
     assert scorer.parse_json_resposta('{"x": oops}', "v1.1") is None
+
+
+def test_janela_movel_soma_noticias_e_so_olha_para_tras():
+    corpus = pd.DataFrame({
+        "item_id": ["a", "b", "c", "d"],
+        "data_publicacao": ["2020-01-10", "2020-02-10", "2020-03-10", "2020-03-11"],
+        "veiculo": "V", "tipo_veiculo": "imprensa", "titulo": ["ta", "tb", "tc", "td"], "lead": "", "paragrafo_1": "",
+        "texto_hash": ["h1", "h2", "h3", "h4"], "wire_cluster": ["w1", "w2", "w3", "w4"], "fonte_ref": "x"})
+    scores = pd.DataFrame({"item_id": ["a", "b", "c", "d"], "d1": [5, 1, 3, 3], "d1_sem_sinal": False})
+    jm = aggregate.agregar_janela_movel(scores, corpus, 3).set_index("mes")
+    mensal = aggregate.agregar(scores, corpus).set_index("mes")
+    jan, fev, mar = (pd.Period(m, "M") for m in ("2020-01", "2020-02", "2020-03"))
+    assert jm.loc[jan, "n_itens"] == 1 and jm.loc[mar, "n_itens"] == 4      # soma as notícias
+    assert jm.loc[jan, "c_llm"] == mensal.loc[jan, "c_llm"]                   # janeiro só vê janeiro
+    assert abs(jm.loc[mar, "c_llm"] - (1.0 + 0.0 + 0.5 + 0.5) / 4) < 1e-9     # média das notícias, não das médias
+    assert jm.loc[jan, "meses_na_janela"] == 1 and jm.loc[mar, "meses_na_janela"] == 3
+    assert jm.index.max() == mar                                              # nenhum mês além do último observado

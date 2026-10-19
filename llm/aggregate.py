@@ -93,13 +93,35 @@ def agregar(scores: pd.DataFrame, corpus: pd.DataFrame) -> pd.DataFrame:
     return _agregar_core(scores, corpus)
 
 
-def _agregar_core(scores: pd.DataFrame, corpus: pd.DataFrame) -> pd.DataFrame:
+def agregar_janela_movel(scores: pd.DataFrame, corpus: pd.DataFrame, janela: int = 3) -> pd.DataFrame:
+    """Série mensal em JANELA MÓVEL PARA TRÁS (decidida em 2026-10-19, antes de
+    rodar o Bloco 3): o valor do mês t junta as notícias de t−(janela−1) a t
+    e tira UMA média — soma as notícias, não faz média de médias, para que
+    um mês com 3 notícias não pese igual a um com 80. Só olha para trás: o
+    mês t nunca usa informação de t+1 (sem look-ahead).
+
+    Mesmo núcleo da série mensal (colapso wire, FE de tipo, EP por dia), com
+    cada notícia contada nas `janela` janelas que a contêm. Colunas extras:
+    ``janela`` e ``meses_na_janela`` (< janela nos primeiros meses do corpus).
+    """
+    out = _agregar_core(scores, corpus, janela=janela)
+    out["janela"] = janela
+    return out
+
+
+def _agregar_core(scores: pd.DataFrame, corpus: pd.DataFrame, janela: int = 1) -> pd.DataFrame:
     corpus = schema.dedup(schema.validate(corpus))
     df = scores.merge(
         corpus[["item_id", "data_publicacao", "tipo_veiculo", "wire_cluster"]],
         on="item_id", how="inner")
     df["dia"] = pd.to_datetime(df["data_publicacao"])
     df["mes"] = df["dia"].dt.to_period("M")
+    if janela > 1:
+        # cada notícia entra na janela do próprio mês e das (janela−1) seguintes
+        primeiro, ultimo = df["mes"].min(), df["mes"].max()
+        df = pd.concat([df.assign(mes=df["mes"] + k) for k in range(janela)], ignore_index=True)
+        df = df[df["mes"] <= ultimo]
+        meses_na_janela = {m: min(janela, (m - primeiro).n + 1) for m in df["mes"].unique()}
     df["c"] = (pd.to_numeric(df["d1"], errors="coerce") - 1) / 4.0
     for d in ("d2", "d3"):
         if d in df.columns:
@@ -149,6 +171,8 @@ def _agregar_core(scores: pd.DataFrame, corpus: pd.DataFrame) -> pd.DataFrame:
                 linha[f"taxa_{d}_sem_sinal"] = g[f"{d}_sem_sinal"].mean()
         linhas.append(linha)
     out = pd.DataFrame(linhas)
+    if janela > 1:
+        out["meses_na_janela"] = out["mes"].map(meses_na_janela)
     if tem_sem_sinal:
         out["taxa_d1_sem_sinal"] = out["mes"].map(taxa_d1)
         out["n_itens_total"] = out["mes"].map(n_total)
