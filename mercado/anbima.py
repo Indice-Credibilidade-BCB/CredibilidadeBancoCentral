@@ -34,7 +34,7 @@ import numpy as np
 import pandas as pd
 import requests
 
-from validacao.dados_bcb import RAIZ
+from mercado.bcb import RAIZ
 
 from .calendario import feriados
 

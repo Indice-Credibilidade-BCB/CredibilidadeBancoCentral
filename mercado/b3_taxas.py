@@ -42,7 +42,7 @@ import numpy as np
 import pandas as pd
 import requests
 
-from validacao.dados_bcb import DIR_MACRO, RAIZ
+from mercado.bcb import DIR_MACRO, RAIZ
 
 from .calendario import feriados
 

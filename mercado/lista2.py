@@ -22,8 +22,8 @@ import sys
 import numpy as np
 import pandas as pd
 
-from validacao import dados_bcb
-from validacao.dados_bcb import BANDA_TOLERANCIA, DIR_MACRO
+from mercado import bcb as dados_bcb
+from mercado.bcb import BANDA_TOLERANCIA, DIR_MACRO
 
 from . import anbima, b3_taxas, calendario, inflacao_implicita
 

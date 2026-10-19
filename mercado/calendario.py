@@ -45,7 +45,7 @@ import numpy as np
 import pandas as pd
 import requests
 
-from validacao.dados_bcb import DIR_MACRO, RAIZ, reunioes_copom
+from mercado.bcb import DIR_MACRO, RAIZ, reunioes_copom
 
 DIR_MERCADO = RAIZ / "dados" / "mercado"
 URL_FERIADOS = "https://www.anbima.com.br/feriados/arqs/feriados_nacionais.xls"

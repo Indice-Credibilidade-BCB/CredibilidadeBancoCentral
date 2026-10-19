@@ -11,12 +11,25 @@ dados/*
 !dados/concluidas/
 !dados/planos/
 
-# Liberados: séries numéricas públicas (B3/ANBIMA/BCB), sem texto de terceiros.
+# Liberados: séries numéricas públicas (B3/ANBIMA/BCB/Tesouro), sem texto de
+# terceiros. dados/macro/ guarda as séries brutas do BCB, do Tesouro Direto e
+# da B3 como foram baixadas — versionadas para que os resultados sejam
+# reproduzíveis mesmo que as fontes mudem ou saiam do ar.
 !dados/mercado/
+!dados/macro/
 
 # Liberados: derivados agregados que não permitem reconstruir os textos
 # (índice mensal, bandas, contagens). É o que vai junto com o paper.
 !dados/derivados/
+
+# ─── Etapas 4–7 (validação e modelo) ─────────────────────────────────────
+# Em desenvolvimento local por outros membros da equipe; só o README entra.
+validacao/*
+!validacao/README.md
+modelo/*
+!modelo/README.md
+dados/derivados/validacao/
+dados/derivados/modelo/
 
 # Bloqueados explicitamente, mesmo que alguém libere um pai acima:
 dados/bruto/

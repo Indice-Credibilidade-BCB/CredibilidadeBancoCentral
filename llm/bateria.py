@@ -92,7 +92,7 @@ def amostra_estratificada(corpus: pd.DataFrame, n_por_estrato: int = N_POR_ESTRA
 
 def surpresa_futura(datas: pd.Series) -> pd.Series:
     """IPCA 12m realizado em t+12 − mediana Focus 12m (suavizada) na data (p.p.)."""
-    from validacao import dados_bcb
+    from mercado import bcb as dados_bcb
     ipca = dados_bcb.sgs("ipca_12m")
     ipca.index = pd.DatetimeIndex(ipca.index).to_period("M")
     focus = dados_bcb.focus_ipca_12m().sort_values("Data")
@@ -194,7 +194,7 @@ def relatorio(provider: str, vmin_path: pathlib.Path | None = None,
 
 def t4_adaptado(provider: str, vmin_path: pathlib.Path) -> dict:
     """T4 com a nota V-min no lugar do ouro humano (ver docstring do módulo)."""
-    from validacao.econometria import ols_hac
+    import statsmodels.api as sm
     corpus = pd.read_parquet(REPO / "dados" / "llm" / "corpus.parquet")[["item_id", "data_publicacao"]]
     vmax = _scores(REPO / "dados" / "llm" / "scores" / f"producao_{provider}.jsonl", "producao|real|nenhuma")
     vmin = _scores(vmin_path)
@@ -209,7 +209,17 @@ def t4_adaptado(provider: str, vmin_path: pathlib.Path) -> dict:
     mens = m.dropna(subset=["surpresa"]).groupby("mes").agg(resid=("resid", "mean"), surpresa=("surpresa", "first"),
                                                             n=("resid", "size"))
     mens = mens[mens["n"] >= 10]
-    res = ols_hac(mens["resid"], mens[["surpresa"]])
+    # MQO com erro Newey-West; defasagens pela regra de Newey-West (1994)
+    hac = int(np.floor(4 * (len(mens) / 100.0) ** (2.0 / 9.0)))
+    ajuste = sm.OLS(mens["resid"].to_numpy(float), sm.add_constant(mens[["surpresa"]].to_numpy(float))).fit(
+        cov_type="HAC", cov_kwds={"maxlags": hac})
+
+    class _R:  # mesma interface usada abaixo
+        n = int(ajuste.nobs)
+        params = {"surpresa": ajuste.params[1]}
+        ep = {"surpresa": ajuste.bse[1]}
+        p = {"surpresa": ajuste.pvalues[1]}
+    res = _R
     item = m.dropna(subset=["surpresa"])
     rho = float(np.corrcoef(item["resid"], item["surpresa"])[0, 1])
     return {"n_itens": int(len(m)), "n_meses": int(res.n), "coef_surpresa": float(res.params["surpresa"]),

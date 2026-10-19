@@ -1,0 +1,29 @@
+ano,ano_fechado,meta,banda,limite_inferior,limite_superior,meta_original_cmn,meta_ajustada_bcb,regime,ipca_dezembro_12m,cumpriu,meses_fora_da_banda,desvio_pp
+1999,True,8.0,2.0,6.0,10.0,8.0,,ano-calendário,8.94,True,,0.9399999999999995
+2000,True,6.0,2.0,4.0,8.0,6.0,,ano-calendário,5.97,True,,-0.03000000000000025
+2001,True,4.0,2.0,2.0,6.0,4.0,,ano-calendário,7.67,False,,3.67
+2002,True,3.5,2.0,1.5,5.5,3.5,,ano-calendário,12.53,False,,9.03
+2003,True,4.0,2.5,1.5,6.5,3.25,8.5,ano-calendário,9.3,False,,5.300000000000001
+2004,True,5.5,2.5,3.0,8.0,3.75,5.5,ano-calendário,7.6,True,,2.0999999999999996
+2005,True,4.5,2.5,2.0,7.0,4.5,,ano-calendário,5.69,True,,1.1900000000000004
+2006,True,4.5,2.0,2.5,6.5,4.5,,ano-calendário,3.14,True,,-1.3599999999999999
+2007,True,4.5,2.0,2.5,6.5,4.5,,ano-calendário,4.46,True,,-0.040000000000000036
+2008,True,4.5,2.0,2.5,6.5,4.5,,ano-calendário,5.9,True,,1.4000000000000004
+2009,True,4.5,2.0,2.5,6.5,4.5,,ano-calendário,4.31,True,,-0.1900000000000004
+2010,True,4.5,2.0,2.5,6.5,4.5,,ano-calendário,5.91,True,,1.4100000000000001
+2011,True,4.5,2.0,2.5,6.5,4.5,,ano-calendário,6.5,True,,2.0
+2012,True,4.5,2.0,2.5,6.5,4.5,,ano-calendário,5.84,True,,1.3399999999999999
+2013,True,4.5,2.0,2.5,6.5,4.5,,ano-calendário,5.91,True,,1.4100000000000001
+2014,True,4.5,2.0,2.5,6.5,4.5,,ano-calendário,6.41,True,,1.9100000000000001
+2015,True,4.5,2.0,2.5,6.5,4.5,,ano-calendário,10.67,False,,6.17
+2016,True,4.5,2.0,2.5,6.5,4.5,,ano-calendário,6.29,True,,1.79
+2017,True,4.5,1.5,3.0,6.0,4.5,,ano-calendário,2.95,False,,-1.5499999999999998
+2018,True,4.5,1.5,3.0,6.0,4.5,,ano-calendário,3.75,True,,-0.75
+2019,True,4.25,1.5,2.75,5.75,4.25,,ano-calendário,4.31,True,,0.05999999999999961
+2020,True,4.0,1.5,2.5,5.5,4.0,,ano-calendário,4.52,True,,0.5199999999999996
+2021,True,3.75,1.5,2.25,5.25,3.75,,ano-calendário,10.06,False,,6.3100000000000005
+2022,True,3.5,1.5,2.0,5.0,3.5,,ano-calendário,5.79,False,,2.29
+2023,True,3.25,1.5,1.75,4.75,3.25,,ano-calendário,4.62,True,,1.37
+2024,True,3.0,1.5,1.5,4.5,3.0,,ano-calendário,4.83,False,,1.83
+2025,True,3.0,1.5,1.5,4.5,3.0,,meta contínua,4.26,False,10.0,1.2599999999999998
+2026,False,3.0,1.5,1.5,4.5,3.0,,meta contínua,,True,3.0,
