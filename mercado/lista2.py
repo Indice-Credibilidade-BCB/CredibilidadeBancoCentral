@@ -141,7 +141,7 @@ def rodar(atualizar: bool = False) -> pd.DataFrame:
     d = td["diario"]
     ok("Curvas nominal/real e implícita (histórico)", "Tesouro Direto", "dados/mercado/curvas_tesouro_direto_diario.csv",
        len(d), str(d.data.min().date()), str(d.data.max().date()),
-       f"implícita 5a em {100*td['cobertura']['implicita_5a']:.0f}% dos dias; rival -> dados/mercado/breakeven.csv")
+       f"implícita 5a em {100*td['cobertura']['implicita_5a']:.0f}% dos dias")
     if td["validacao"] is not None:
         v = td["validacao"].dropna(subset=["dif_media_pp"])
         v5 = v[(v.horizonte_anos == 5) & (v.curva == "implicita")]

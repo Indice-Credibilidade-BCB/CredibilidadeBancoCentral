@@ -204,8 +204,8 @@ def focus_selic_reunioes(inicio: str = "2001-01-01", atualizar: bool = False) ->
     """Focus diário: Selic esperada por reunião do Copom (baseCalculo 0).
 
     Colunas: Data, Reuniao ("R5/2028"), Mediana, Media, DesvioPadrao,
-    numeroRespondentes. Insumo do estimador de surpresa via survey
-    (``modelo.choque.surpresa_focus``).
+    numeroRespondentes. Insumo de uma surpresa alternativa via survey (Selic
+    esperada na véspera menos decidida); o artigo usa o swap DI×Pré 3m.
     """
     cache = _caminho_cache("focus_selic_reunioes")
     if cache.exists() and not atualizar:

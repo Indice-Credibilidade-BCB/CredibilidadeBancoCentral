@@ -162,7 +162,10 @@ def validar_contra_anbima(diario: pd.DataFrame, horizontes=(1, 2, 3, 5)) -> pd.D
 
 
 def construir(atualizar: bool = False, horizonte_rival: int = 5) -> dict:
-    """Baixa, monta e salva tudo. ``horizonte_rival`` define o ``breakeven.csv`` que ``validacao.rivais`` lê.
+    """Baixa, monta e salva tudo. ``horizonte_rival`` define a série ``rival`` devolvida.
+
+    Não grava ``breakeven.csv``: o rival oficial é a implícita de títulos da
+    B3, com o Tesouro Direto só nos buracos (``lista2.salvar_breakeven``).
 
     Padrão 5 anos: é o horizonte de ancoragem de médio prazo (menos ciclo, mais
     credibilidade) e o de melhor cobertura no Tesouro Direto — 100% dos dias
@@ -177,9 +180,8 @@ def construir(atualizar: bool = False, horizonte_rival: int = 5) -> dict:
     m.to_csv(DIR_MERCADO / "inflacao_implicita_mensal.csv")
     col = f"implicita_{horizonte_rival}a"
     rival = dia[["data", col]].dropna().rename(columns={col: "valor"})
-    rival.to_csv(DIR_MERCADO / "breakeven.csv", index=False, date_format="%Y-%m-%d")
     val = validar_contra_anbima(dia)
     if val is not None:
         val.to_csv(DIR_MERCADO / "validacao_td_vs_anbima.csv", index=False)
     cobertura = {f"{c}_{h}a": float(dia[f"{c}_{h}a"].notna().mean()) for c in ("nominal", "real", "implicita") for h in HORIZONTES}
-    return {"diario": dia, "mensal": m, "validacao": val, "cobertura": cobertura, "pontos": pts}
+    return {"diario": dia, "mensal": m, "validacao": val, "cobertura": cobertura, "pontos": pts, "rival": rival}

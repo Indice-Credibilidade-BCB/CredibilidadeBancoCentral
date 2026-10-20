@@ -1,8 +1,9 @@
 # `mercado/` — Séries de mercado e calendários (Etapa 0)
 
-Âncoras de **comportamento revelado** para a validação independente do índice
-(Bloco 3): "preço é percepção sem retórica". Também o calendário que liga as
-reuniões do Copom aos contratos de DI1 (Blocos 5 e 6).
+Âncoras de **comportamento revelado** para a validação do índice (rivais e
+bateria de construto): "preço é percepção sem retórica". Também as séries do
+BCB (`bcb.py`) e o calendário que liga as reuniões do Copom aos contratos de
+DI1, usado no estudo de eventos.
 
 Rodar da **raiz** do repositório:
 
@@ -19,7 +20,7 @@ python -m pytest mercado/tests -q     # 14 testes, sem rede
 | `b3_taxas.py` | Curvas de referência diárias da B3 (arquivo TaxaSwap): DI×Pré desde 2001, LTN e NTN-B desde 2004, DI×IPCA desde 2005. **Fonte principal** das curvas e da inflação implícita. |
 | `inflacao_implicita.py` | Curvas e inflação implícita a partir do Tesouro Direto (2004–hoje): fonte secundária, preenche buracos. |
 | `lista2.py` | Orquestra a "lista 2" (abaixo) e imprime a tabela de estado. |
-| `scrappingDI.py` | Coleta antiga da curva de Swap DI (SGS). |
+| `bcb.py` | SGS, Focus (Olinda), metas e histórico do Copom, com cache em `dados/macro/`. |
 
 ## Lista 2 — o que é baixado e onde fica
 
@@ -65,8 +66,12 @@ real em 2 a 10 anos ficam dentro de ±0,08 p.p. A versão por swaps diverge na
 ponta curta da curva real (o cupom de IPCA curto carrega a sazonalidade do
 índice) e por isso não é a série principal.
 
-`breakeven.csv` (rival do Bloco 3) usa a implícita de títulos da B3 em 5
-anos; dias sem ela usam o Tesouro Direto (coluna `fonte`).
+`breakeven.csv` (rival da validação) usa a implícita de títulos da B3 em 5
+anos; dias sem ela usam o Tesouro Direto (coluna `fonte`). Só `lista2` grava
+esse arquivo. A inclinação (DI×Pré 5a − 3m) é lida direto de
+`curvas_b3_diario.csv`, sem arquivo próprio, e entra sem sinal orientado:
+inclinação maior pode ser prêmio de inflação ou expectativa de normalização
+dos juros.
 
 ## Inflação implícita pelo Tesouro Direto (fonte secundária)
 
@@ -96,9 +101,10 @@ reunião, o fator de Kuttner DU[D+1, venc)/DU[vigência, venc) e a marca
 `kuttner_curto_demais` quando o curto tem menos de 5 dias úteis entre a
 vigência e o vencimento (aí usar `kuttner2`).
 
-## Independência dos blocos
+## Independência da validação
 
-Estas séries ficam **isoladas no Bloco 3**, como validação genuinamente fora
-da amostra. Os termos de inflação dos Blocos 1–2 usam IPCA realizado defasado
-e medianas do Focus. Alimentar breakeven na estimação do Bloco 2 destruiria a
-independência do Bloco 3.
+Estas séries entram só na validação. O latente do Kalman usa IPCA realizado
+defasado e medianas do Focus; alimentar breakeven nele tiraria a
+independência do rival de mercado.
+
+CDS e EMBI+ (dados de fornecedor) não ficam aqui: ver `validacao/README.md`.
