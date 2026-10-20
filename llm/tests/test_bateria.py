@@ -7,14 +7,17 @@ import sandbox
 from diagnostics.leakage import anonimizar, aplicar_anonimizacao
 
 
-def test_excluir_sandbox_usa_manifesto_e_cai_para_hash():
+def test_excluir_sandbox_usa_manifesto_e_hash():
     ids = [f"n{i:05d}" for i in range(400)]
     scores = pd.DataFrame({"item_id": ids, "d1": 3})
-    manifesto = {"n00001", "n00002"}
-    assert len(aggregate.excluir_sandbox(scores, manifesto)) == 398
     # sem manifesto: regra de hash (mesma que gera o manifesto)
-    esperado = sum(not sandbox.em_sandbox(i) for i in ids)
-    assert len(aggregate.excluir_sandbox(scores, set())) == esperado
+    por_hash = {i for i in ids if sandbox.em_sandbox(i)}
+    assert len(aggregate.excluir_sandbox(scores, set())) == len(ids) - len(por_hash)
+    # com manifesto: sai o que está no manifesto OU cai na quarentena pelo hash
+    # (item que entrou no corpus depois do congelamento do manifesto)
+    manifesto = {"n00001", "n00002"}
+    esperado = len(ids) - len(por_hash | manifesto)
+    assert len(aggregate.excluir_sandbox(scores, manifesto)) == esperado
 
 
 def test_l5_mascara_numeros_termos_de_epoca_e_nomes():

@@ -99,12 +99,16 @@ def converter(raw: pd.DataFrame, veiculos_tipo: dict | None = None) -> pd.DataFr
     if faltando:
         raise ValueError(f"Base da coleta sem colunas esperadas: {faltando}")
 
-    data = pd.to_datetime(raw["data"], errors="coerce", utc=True, format="mixed")
+    # `dados/noticias.csv` já traz a hora de Brasília SEM fuso (consolidar()).
+    # Ler com utc=True tratava essa hora local como UTC e atrasava a data em
+    # 3 horas: 4,3% do corpus caía no dia anterior (corrigido em 2026-10-21).
+    # Um valor com fuso explícito ainda é convertido para Brasília.
+    data = raw["data"].map(_data_local)
     sem_data = int(data.isna().sum())
 
     out = pd.DataFrame({
         "item_id": raw["url"].map(item_id_de_url),
-        "data_publicacao": data.dt.tz_convert("America/Sao_Paulo").dt.strftime("%Y-%m-%d"),
+        "data_publicacao": data.map(lambda t: t.strftime("%Y-%m-%d") if pd.notna(t) else None),
         "veiculo": raw["veiculo"].astype(str).str.strip(),
         "titulo": raw["titulo"].astype(str).str.strip(),
         "lead": raw.get("subtitulo", pd.Series("", index=raw.index)).fillna("").astype(str).str.strip(),
@@ -132,10 +136,37 @@ def converter(raw: pd.DataFrame, veiculos_tipo: dict | None = None) -> pd.DataFr
     return out.reset_index(drop=True)
 
 
+def _data_local(valor):
+    t = pd.to_datetime(valor, errors="coerce")
+    if pd.isna(t):
+        return pd.NaT
+    return t if t.tzinfo is None else t.tz_convert("America/Sao_Paulo").tz_localize(None)
+
+
 def construir(entrada: pathlib.Path, saida: pathlib.Path,
-              veiculos_tipo: dict | None = None) -> pd.DataFrame:
-    df = converter(ler(entrada), veiculos_tipo)
+              veiculos_tipo: dict | None = None, veiculos: list | None = None,
+              preservar: set | None = None) -> pd.DataFrame:
+    """`veiculos`: lista de veículos que entram no corpus (config.yaml,
+    `veiculos_corpus`). Uma fonte nova só entra depois de pontuada e avaliada
+    à parte; sem a lista, entram todos os veículos da base consolidada.
+
+    `preservar`: item_ids do corpus anterior. A mesma matéria às vezes está
+    em duas URLs; o dedup por (veículo, título, dia) fica com uma só, e a
+    escolha dependia da ordem das linhas. Com `preservar`, fica a que já
+    estava no corpus, e as notas e o roteamento já feitos continuam valendo."""
+    raw = ler(entrada)
+    if veiculos:
+        fora = sorted(set(raw["veiculo"].dropna()) - set(veiculos))
+        if fora:
+            print(f"fora do corpus (ainda não avaliados): {fora}")
+        raw = raw[raw["veiculo"].isin(veiculos)]
+    df = converter(raw, veiculos_tipo)
+    if preservar:
+        df = df.sort_values("item_id", key=lambda s: ~s.isin(preservar), kind="stable")
     df = schema.dedup(schema.validate(df))
+    if preservar:
+        novos = int((~df["item_id"].isin(preservar)).sum())
+        print(f"preservados do corpus anterior: {len(df) - novos} | novos: {novos}")
     saida.parent.mkdir(parents=True, exist_ok=True)
     df.to_parquet(saida, index=False)
     print(f"corpus: {len(df)} itens -> {saida}")
@@ -147,6 +178,9 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--entrada", default=cfg["paths"]["corpus_coleta"])
     ap.add_argument("--saida", default=cfg["paths"]["corpus"])
+    ap.add_argument("--preservar", default=None,
+                    help="corpus anterior (parquet) cujos item_ids têm preferência no dedup")
     a = ap.parse_args()
+    pres = set(pd.read_parquet(ROOT / a.preservar, columns=["item_id"])["item_id"]) if a.preservar else None
     construir((ROOT / a.entrada).resolve(), (ROOT / a.saida).resolve(),
-              cfg.get("veiculos_tipo"))
+              cfg.get("veiculos_tipo"), cfg.get("veiculos_corpus"), pres)

@@ -4,6 +4,8 @@
 Cada teste trava um bug encontrado: se voltar, o teste quebra.
 Rodar: PYTHONPATH=. python tests/test_auditoria.py
 """
+import pathlib
+
 import numpy as np
 import pandas as pd
 
@@ -88,7 +90,32 @@ def test_t5_pareado():
     assert res2.get("p_pareado", 1.0) > 0.05
 
 
-def test_relatorio_coercao(tmp="/tmp/anot_teste.csv"):
+def test_t5_diferenca_constante_reprova():
+    # era ruim exatamente 1 ponto abaixo em TODOS os pares: desvio zero, mas é
+    # o vazamento mais forte possível — tem de reprovar
+    rows = [{"item_id": f"{g}{e}", "texto_grupo": f"g{g}", "era": era, "d1": 4 if era == "boa" else 3}
+            for g in range(12) for e, era in (("a", "boa"), ("b", "ruim"))]
+    res = leakage.teste_sinteticos(pd.DataFrame(rows))
+    assert res["p_pareado"] < 0.05
+
+
+def test_escolher_limiar_garante_sensibilidade():
+    from local_encoder.filtro_sinal import escolher_limiar
+    rng = np.random.default_rng(0)
+    p = rng.uniform(size=2000)
+    y = rng.uniform(size=2000) < p           # quanto maior p, mais provável ter sinal
+    lim = escolher_limiar(p, y, 0.95)
+    assert (p[y] >= lim).mean() >= 0.95
+
+
+def test_parser_sem_chave_d1_e_invalido():
+    assert scorer.parse_json_resposta('{"d2": 3, "d3": null}', "v1.1") is None
+    ok = scorer.parse_json_resposta('{"d1": null, "d1_sem_sinal": true, "d2": null, "d3": null}', "v1.1")
+    assert ok is not None and ok["d1_sem_sinal"] is True
+
+
+def test_relatorio_coercao(tmp_path):
+    tmp = tmp_path / "anot_teste.csv"
     df = pd.DataFrame({
         "anot1_d1": [1, 2, "3", 4, 5, ""],       # texto e vazio
         "anot2_d1": [1, 2, 3, 4, 5, 2],
@@ -145,7 +172,8 @@ def test_scorer_variante_inclui_modo():
     assert k1 != k2
 
 
-def test_carregar_scores_dedup(tmp="/tmp/scores_teste.jsonl"):
+def test_carregar_scores_dedup(tmp_path):
+    tmp = tmp_path / "scores_teste.jsonl"
     import json
     recs = [
         {"cache_key": "k1", "item_id": "a", "d1": None, "erro": "parse_falhou"},
@@ -155,7 +183,7 @@ def test_carregar_scores_dedup(tmp="/tmp/scores_teste.jsonl"):
     with open(tmp, "w") as f:
         for r in recs:
             f.write(json.dumps(r) + "\n")
-    df = aggregate.carregar_scores(tmp)
+    df = aggregate.carregar_scores(str(tmp))
     assert len(df) == 2 and set(df["item_id"]) == {"a", "b"}
     assert int(df.loc[df["item_id"] == "a", "d1"].iloc[0]) == 4
 
@@ -165,10 +193,11 @@ if __name__ == "__main__":
     test_anonimizar_fronteira_e_caixa(); print("anonimização fronteira/caixa OK")
     test_datas_refletidas(); print("date-swap refletido OK")
     test_t5_pareado(); print("T5 pareado OK")
-    test_relatorio_coercao(); print("relatório com coerção OK")
+    import tempfile; _d = pathlib.Path(tempfile.mkdtemp())
+    test_relatorio_coercao(_d); print("relatório com coerção OK")
     test_halo_regra(); print("regra de halo OK")
     test_parser_float_integral(); print("parser float integral OK")
     test_parser_d1_nulo_vira_neutro(); print("parser d1 nulo -> neutro OK")
     test_scorer_variante_inclui_modo(); print("variante inclui modo OK")
-    test_carregar_scores_dedup(); print("dedup de retomada OK")
+    test_carregar_scores_dedup(_d); print("dedup de retomada OK")
     print("AUDITORIA: TODOS OS TESTES PASSARAM")

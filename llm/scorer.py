@@ -12,8 +12,8 @@ Desenho (decisões travadas + extensões desta sessão):
     variante de data (real/omitida/trocada) e nível de anonimização.
 
 Uso:
-  python scorer.py --provider gemini_flash_lite --input data/piloto/pilot_items.csv \
-      --mode piloto --out data/scores/pilot_gemini.jsonl
+  python scorer.py --provider sabia --input ../dados/llm/piloto/pilot_items.csv \
+      --mode piloto --out ../dados/llm/scores/pilot_sabia.jsonl
 """
 from __future__ import annotations
 
@@ -21,6 +21,7 @@ import argparse
 import datetime as dt
 import hashlib
 import json
+import os
 import pathlib
 import re
 import time
@@ -90,6 +91,11 @@ def parse_json_resposta(texto: str, versao: str | None = None) -> dict | None:
 
     d1_bruto = obj.get("d1")
     if versao != "v1.0":
+        # "sem sinal" só quando o modelo disse isso: d1_sem_sinal verdadeiro ou
+        # a chave d1 presente com null. Uma resposta sem a chave d1 (objeto de
+        # erro, JSON truncado) é inválida e volta para nova tentativa.
+        if "d1" not in obj and obj.get("d1_sem_sinal") is not True:
+            return None
         sem = obj.get("d1_sem_sinal") is True or d1_bruto is None
         if sem:
             obj["d1"], obj["d1_sem_sinal"] = None, True
@@ -237,8 +243,13 @@ def score_batch(provider_name: str, input_path: str, mode: str, out_path: str,
 
     cache_dir = ROOT / cfg["paths"]["cache_dir"]
     cache_dir.mkdir(parents=True, exist_ok=True)
-    limiter = RateLimiter(pcfg.get("rpm", 10), pcfg.get("rpd", 10**9),
-                          cache_dir / f"rpd_{provider_name}.json")
+    # Vários processos em paralelo (producao_v11.py) dividem os limites do
+    # provedor e têm cada um o seu contador diário, para não sobrescreverem
+    # o arquivo uns dos outros.
+    n_proc = int(os.environ.get("SCORER_N_PROC", "1"))
+    proc_id = os.environ.get("SCORER_PROC_ID")
+    estado = cache_dir / (f"rpd_{provider_name}_p{proc_id}.json" if proc_id else f"rpd_{provider_name}.json")
+    limiter = RateLimiter(max(1, pcfg.get("rpm", 10) // n_proc), max(1, pcfg.get("rpd", 10**9) // n_proc), estado)
 
     out = pathlib.Path(out_path)
     out.parent.mkdir(parents=True, exist_ok=True)

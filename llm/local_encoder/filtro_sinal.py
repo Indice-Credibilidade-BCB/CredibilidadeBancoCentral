@@ -80,17 +80,29 @@ def treinar(df_rot: pd.DataFrame, out_dir: pathlib.Path, epocas: int = 3, batch_
             perda = modelo.coral_loss(logits.float(), alvo)
             scaler.scale(perda).backward(); scaler.step(opt); scaler.update()
 
+    # A validação é dividida em duas metades: uma ESCOLHE o limiar, a outra
+    # MEDE a sensibilidade. Medir no mesmo conjunto que escolheu o limiar dá
+    # sensibilidade >= sens_min por construção. A estimativa de produção, fora
+    # da amostra, vem da auditoria aleatória das descartadas (producao_v11.py).
     p_val = _prob(modelo, tok, [X[j] for j in iv], dev, fp16)
     y_val = (y[iv] > 1)
-    limiar = escolher_limiar(p_val, y_val, sens_min)
+    metade = np.arange(len(iv)) % 2 == 0
+    limiar = escolher_limiar(p_val[metade], y_val[metade], sens_min)
     descarta = p_val < limiar
+    teste = ~metade
+    pos_teste = y_val & teste
+    from scipy.stats import beta
     from sklearn.metrics import roc_auc_score
+    acertos, n_pos = int((~descarta & pos_teste).sum()), int(pos_teste.sum())
     met = {"n_treino": int(len(it)), "n_validacao": int(len(iv)), "taxa_sinal_rotulos": float((y > 1).mean()),
            "auc_validacao": float(roc_auc_score(y_val, p_val)) if y_val.any() and (~y_val).any() else None,
            "limiar": float(limiar), "sens_min_alvo": sens_min,
-           "sensibilidade_validacao": float((~descarta[y_val]).mean()) if y_val.any() else None,
-           "fracao_descartada_validacao": float(descarta.mean()),
-           "sinal_perdido_validacao": int((descarta & y_val).sum()),
+           "sensibilidade_teste": acertos / n_pos if n_pos else None,
+           # limite inferior de Clopper-Pearson (95%, unilateral)
+           "sensibilidade_teste_li95": float(beta.ppf(0.05, acertos, n_pos - acertos + 1)) if acertos else 0.0,
+           "n_positivos_teste": n_pos,
+           "fracao_descartada_teste": float(descarta[teste].mean()),
+           "sinal_perdido_teste": int((descarta & pos_teste).sum()),
            "minutos_treino": (time.time() - t0) / 60, "dispositivo": disp.descrever(dev)}
     out_dir.mkdir(parents=True, exist_ok=True)
     torch.save({"state_dict": {k: v.detach().cpu() for k, v in modelo.state_dict().items()},

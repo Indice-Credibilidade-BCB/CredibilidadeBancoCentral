@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""T0 — roda a sonda de identificabilidade temporal nos 4 níveis da escada
+"""T0 — roda a sonda de identificabilidade temporal nos 5 níveis da escada
 (D11/4.2.3). Round-trip de API; a estatística pura vive em
 `diagnostics/temporal_probe.py` (testável sem rede).
 
@@ -7,7 +7,7 @@ Uso:
   python t0_probe.py --provider sabia --input ../dados/llm/piloto/pilot_items.csv \
       --out ../dados/llm/piloto/t0_respostas.jsonl
 
-Roda os 4 níveis (L1..L4) sobre a mesma amostra do piloto; ao final imprime
+Roda os 5 níveis (L1..L5) sobre a mesma amostra do piloto; ao final imprime
 EAM e acurácia de episódio por nível e o NÍVEL MÍNIMO que atinge cegueira
 (critério: EAM >= 4 anos E acurácia <= 0,25). Esse nível vira o V-min de
 produção (D12) — cada nível é uma chamada extra por item, então isto roda

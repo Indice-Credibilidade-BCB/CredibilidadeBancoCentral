@@ -133,6 +133,14 @@ python -m local_encoder.infer --checkpoint ../dados/llm/checkpoints/bertimbau_co
     --input ../dados/llm/corpus.parquet --out ../dados/llm/scores/bertimbau_local.jsonl
 # -> aggregate.py na série local + diagnostics.leakage.comparar_t6(api, local) — só pós-2019 (D14)
 
+# 10) Série oficial do artigo (prompt v1.1): pré-filtro BERTimbau + auditoria
+#     aleatória de 10% das descartadas; uma notícia por chamada; cada etapa retomável
+python producao_v11.py tudo --provider sabia
+python producao_v11.py tudo --provider gemini_flash_lite --dir ../dados/llm/producao_v11_gemini
+python figuras_indice.py          # índice diário, mensal e trimestral
+python figuras_dimensoes.py       # D1, D2 e D3 (D2/D3 com peso de desenho)
+python robustez_indice.py         # índice por veículo, FE de veículo, amostra aleatória
+
 # Testes
 PYTHONPATH=. python -m pytest tests/ -q
 ```

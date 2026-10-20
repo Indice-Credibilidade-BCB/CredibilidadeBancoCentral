@@ -165,10 +165,14 @@ def _agregar_core(scores: pd.DataFrame, corpus: pd.DataFrame, janela: int = 1) -
             "n_itens": len(g),
             "n_dias": n_dias,
         }
+        # D2/D3 aqui são só DIAGNÓSTICO do halo, calculadas entre as notícias
+        # que têm sinal na D1 (o nome diz isso). As séries de D2 e D3 do artigo
+        # usam todas as notícias, com o peso do desenho do pré-filtro:
+        # figuras_dimensoes.py -> indice_dimensoes_*.csv.
         for d in ("d2", "d3"):
             if d in g.columns:
-                linha[f"{d}_media"] = g[d].mean()
-                linha[f"taxa_{d}_sem_sinal"] = g[f"{d}_sem_sinal"].mean()
+                linha[f"{d}_media_entre_sinal_d1"] = g[d].mean()
+                linha[f"taxa_{d}_sem_sinal_entre_sinal_d1"] = g[f"{d}_sem_sinal"].mean()
         linhas.append(linha)
     out = pd.DataFrame(linhas)
     if janela > 1:
@@ -229,10 +233,11 @@ def excluir_sandbox(scores: pd.DataFrame, manifesto: set | None = None) -> pd.Da
     que é a mesma que gerou o manifesto.
     """
     ids = manifesto if manifesto is not None else sandbox.carregar_manifesto()
+    # Manifesto OU hash: o manifesto foi congelado num corpus menor; itens que
+    # entrarem depois caem na quarentena pela mesma regra de hash.
+    mask = scores["item_id"].astype(str).map(sandbox.em_sandbox)
     if ids:
-        mask = scores["item_id"].astype(str).isin(ids)
-    else:
-        mask = scores["item_id"].astype(str).map(sandbox.em_sandbox)
+        mask = mask | scores["item_id"].astype(str).isin(ids)
     return scores.loc[~mask].copy()
 
 

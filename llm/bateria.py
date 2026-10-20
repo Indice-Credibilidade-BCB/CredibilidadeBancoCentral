@@ -209,22 +209,17 @@ def t4_adaptado(provider: str, vmin_path: pathlib.Path) -> dict:
     mens = m.dropna(subset=["surpresa"]).groupby("mes").agg(resid=("resid", "mean"), surpresa=("surpresa", "first"),
                                                             n=("resid", "size"))
     mens = mens[mens["n"] >= 10]
-    # MQO com erro Newey-West; defasagens pela regra de Newey-West (1994)
-    hac = int(np.floor(4 * (len(mens) / 100.0) ** (2.0 / 9.0)))
+    # MQO com erro Newey-West. A surpresa é inflação acumulada em 12 meses: meses
+    # vizinhos compartilham ~11 dos 12 meses, então a defasagem não pode ficar
+    # abaixo de 12, mesmo que a regra de Newey-West (1994) dê menos.
+    hac = max(12, int(np.floor(4 * (len(mens) / 100.0) ** (2.0 / 9.0))))
     ajuste = sm.OLS(mens["resid"].to_numpy(float), sm.add_constant(mens[["surpresa"]].to_numpy(float))).fit(
         cov_type="HAC", cov_kwds={"maxlags": hac})
-
-    class _R:  # mesma interface usada abaixo
-        n = int(ajuste.nobs)
-        params = {"surpresa": ajuste.params[1]}
-        ep = {"surpresa": ajuste.bse[1]}
-        p = {"surpresa": ajuste.pvalues[1]}
-    res = _R
     item = m.dropna(subset=["surpresa"])
     rho = float(np.corrcoef(item["resid"], item["surpresa"])[0, 1])
-    return {"n_itens": int(len(m)), "n_meses": int(res.n), "coef_surpresa": float(res.params["surpresa"]),
-            "ep_hac": float(res.ep["surpresa"]), "p": float(res.p["surpresa"]),
-            "corr_item_resid_surpresa": rho, "reprova": bool(res.p["surpresa"] < ALFA),
+    return {"n_itens": int(len(m)), "n_meses": int(ajuste.nobs), "coef_surpresa": float(ajuste.params[1]),
+            "ep_hac": float(ajuste.bse[1]), "p": float(ajuste.pvalues[1]), "defasagens_hac": hac,
+            "corr_item_resid_surpresa": rho, "reprova": bool(ajuste.pvalues[1] < ALFA),
             "obs": "adaptado: referência = nota V-min (não há ouro humano)"}
 
 

@@ -1,8 +1,11 @@
-# Configuração central — índice de credibilidade BCB (v1.0)
+# Configuração central — índice de credibilidade BCB
 # Trocar de modelo = editar aqui + registrar em produção como potencial quebra
-# estrutural (janela de sobreposição obrigatória).
+# estrutural (janela de sobreposição obrigatória). A versão do prompt NÃO fica
+# aqui: é prompts.PROMPT_VERSION (v1.1) e vai gravada em cada nota com o hash.
 
-prompt_version: "v1.0"
+# Veículos do corpus de produção. Uma fonte nova (Exame, G1, Bloomberg Línea)
+# só entra depois de pontuada e comparada à série principal no período comum.
+veiculos_corpus: [Valor, O Globo, InfoMoney, Money Times, Poder360]
 
 # Caminhos relativos a llm/. Tudo que contém texto de terceiros vive em
 # dados/ na raiz do repositório, que NÃO é versionado (ver .gitignore).

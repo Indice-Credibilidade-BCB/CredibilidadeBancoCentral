@@ -12,7 +12,7 @@ T3 (anonimização): mascarar datas do corpo (L1), autoridades do BC (L2),
     pessoas/eras/níveis, não o texto.
 T4 (resíduo preditivo): resíduo do escore LLM (controlando o escore humano)
     não deve prever a surpresa inflacionária FUTURA. Regressão com Newey-West
-    na etapa econométrica; aqui, correlação de triagem.
+    em bateria.t4_adaptado (referência V-min, sem ouro humano).
 T5 (itens sintéticos): textos fabricados idênticos, "datados" em eras boas e
     ruins. Como cada grupo (texto_grupo) tem o MESMO texto nas duas eras, o
     teste primário é PAREADO por grupo (mais poder que Welch); Welch fica
@@ -321,9 +321,14 @@ def teste_sinteticos(scores: pd.DataFrame) -> dict:
         t_par = dif.mean() / (dif.std(ddof=1) / np.sqrt(npar))
         out["t_pareado"] = float(t_par)
         out["p_pareado"] = _p_bicaudal_t(t_par, npar - 1)
+    elif npar >= 2 and dif.mean() != 0:
+        # Todos os pares diferem pelo MESMO valor não nulo: a evidência de
+        # vazamento mais forte possível numa escala ordinal, não a mais fraca.
+        out.update({"t_pareado": float(np.sign(dif.mean()) * np.inf), "p_pareado": 0.0,
+                    "obs": "mesma diferença não nula em todos os pares"})
     elif npar >= 2:
         out.update({"t_pareado": 0.0, "p_pareado": 1.0,
-                    "obs": "diferenças idênticas em todos os pares"})
+                    "obs": "diferença nula em todos os pares"})
     # Welch (robustez)
     g = {era: s.loc[s["era"] == era, "d1"].dropna() for era in ("boa", "ruim")}
     n1, n2 = len(g["boa"]), len(g["ruim"])

@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import pathlib
 import sys
 
@@ -87,8 +88,9 @@ def _pontuar_individual(provider: str, df: pd.DataFrame, out: pathlib.Path,
         cmd = [sys.executable, str(ROOT / "scorer.py"), "--provider", provider, "--mode", "producao",
                "--prompt-versao", "v1.1", "--anonimizacao", anonimizacao,
                "--input", str(parte), "--out", str(pasta / f"parte_{k}.jsonl")]
+        env = dict(os.environ, SCORER_N_PROC=str(n_proc), SCORER_PROC_ID=str(k))
         procs.append(subprocess.Popen(cmd, cwd=ROOT, stdout=(pasta / f"log_{k}.txt").open("a"),
-                                      stderr=subprocess.STDOUT))
+                                      stderr=subprocess.STDOUT, env=env))
     for pr in procs:
         pr.wait()
     linhas = []
