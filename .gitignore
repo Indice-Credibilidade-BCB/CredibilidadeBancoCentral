@@ -22,20 +22,16 @@ dados/*
 # (índice mensal, bandas, contagens). É o que vai junto com o paper.
 !dados/derivados/
 
-# ─── Etapas 4–7 (validação e modelo) ─────────────────────────────────────
-# Em desenvolvimento local por outros membros da equipe; só o README entra.
-validacao/*
-!validacao/README.md
-modelo/*
-!modelo/README.md
-dados/derivados/validacao/
-dados/derivados/modelo/
+# Saídas da validação: só a do artigo entra (os CSVs saem sem CDS/EMBI+).
+dados/derivados/validacao/*
+!dados/derivados/validacao/artigo/
 
 # Bloqueados explicitamente, mesmo que alguém libere um pai acima:
 dados/bruto/
 dados/noticias.csv
 dados/noticias.xlsx
 dados/llm/
+dados/terceiros/
 **/corpus*.parquet
 **/corpus*.csv
 
@@ -44,6 +40,11 @@ dados/llm/
 .env.*
 *.key
 credenciais*.json
+
+# ─── Pesos de modelos (grandes; ficam em dados/llm/checkpoints) ──────────
+*.pt
+*.safetensors
+*.bin
 
 # ─── Cache e ambiente ────────────────────────────────────────────────────
 __pycache__/
