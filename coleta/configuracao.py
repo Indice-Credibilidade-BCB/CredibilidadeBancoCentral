@@ -71,12 +71,17 @@ TERMOS_FILTRO = ["banco central", "copom", "selic", "politica monetaria",
 # descoberta. sondarVeiculos() confirma quais realmente respondem.
 VEICULOS = {
     "Valor":          {"motor": "globo", "tenant": "valor"},
-    "G1":             {"motor": "globo", "tenant": "g1"},
+    # G1: mesma busca da Globo, mas sem ordem por data — plano fixo em g1.py.
+    "G1":             {"motor": "globo-plano", "tenant": "g1"},
     "O Globo":        {"motor": "globo", "tenant": "oglobo"},
     "Poder360":       {"motor": "wordpress", "base": "https://www.poder360.com.br"},
     "InfoMoney":      {"motor": "wordpress", "base": "https://www.infomoney.com.br"},
     "Money Times":    {"motor": "wordpress", "base": "https://www.moneytimes.com.br"},
     "Agência Brasil": {"motor": "wordpress", "base": "https://agenciabrasil.ebc.com.br"},
+    # 2026-10-20: arquivo WordPress desde antes de 2011, texto completo na API,
+    # robots.txt sem bloqueio a agentes de IA. Bloomberg Línea (desde jul/2021)
+    # tem coletor próprio por sitemap: coleta/linea.py.
+    "Exame":          {"motor": "wordpress", "base": "https://exame.com"},
 }
 
 # %% Calendário do Copom e limites de requisição

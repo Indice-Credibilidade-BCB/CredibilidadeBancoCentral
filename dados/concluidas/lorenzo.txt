@@ -516,3 +516,113 @@ Money Times||política monetária||2015
 Money Times||meta de inflação||2015
 Money Times||Relatório de Inflação||2015
 Money Times||Banco Central||2015
+Exame||Copom||2011
+Exame||Copom||2012
+Exame||Copom||2013
+Exame||Copom||2014
+Exame||Copom||2015
+Exame||Copom||2016
+Exame||Copom||2017
+Exame||Copom||2018
+Exame||Copom||2019
+Exame||Copom||2020
+Exame||Copom||2021
+Exame||Copom||2022
+Exame||Copom||2023
+Exame||Copom||2024
+Exame||Copom||2025
+Exame||Copom||2026
+Exame||Selic||2011
+Exame||Selic||2012
+Exame||Selic||2013
+Exame||Selic||2014
+Exame||Selic||2015
+Exame||Selic||2016
+Exame||Selic||2017
+Exame||Selic||2018
+Exame||Selic||2019
+Exame||Selic||2020
+Exame||Selic||2021
+Exame||Selic||2022
+Exame||Selic||2023
+Exame||Selic||2024
+Exame||Selic||2025
+Exame||Selic||2026
+Exame||ata do Copom||2011
+Exame||ata do Copom||2013
+Exame||ata do Copom||2014
+Exame||ata do Copom||2015
+Exame||ata do Copom||2016
+Exame||ata do Copom||2017
+Exame||ata do Copom||2018
+Exame||ata do Copom||2019
+Exame||ata do Copom||2020
+Exame||ata do Copom||2021
+Exame||ata do Copom||2022
+Exame||ata do Copom||2023
+Exame||ata do Copom||2024
+Exame||ata do Copom||2025
+Exame||ata do Copom||2026
+Exame||política monetária||2011
+Exame||política monetária||2012
+Exame||política monetária||2013
+Exame||política monetária||2014
+Exame||política monetária||2015
+Exame||política monetária||2016
+Exame||política monetária||2017
+Exame||política monetária||2018
+Exame||política monetária||2019
+Exame||política monetária||2020
+Exame||política monetária||2021
+Exame||política monetária||2022
+Exame||política monetária||2023
+Exame||política monetária||2024
+Exame||política monetária||2025
+Exame||política monetária||2026
+Exame||meta de inflação||2011
+Exame||meta de inflação||2012
+Exame||meta de inflação||2013
+Exame||meta de inflação||2015
+Exame||meta de inflação||2016
+Exame||meta de inflação||2017
+Exame||meta de inflação||2018
+Exame||meta de inflação||2019
+Exame||meta de inflação||2020
+Exame||meta de inflação||2021
+Exame||meta de inflação||2022
+Exame||meta de inflação||2023
+Exame||meta de inflação||2024
+Exame||meta de inflação||2025
+Exame||meta de inflação||2026
+Exame||Relatório de Inflação||2011
+Exame||Relatório de Inflação||2012
+Exame||Relatório de Inflação||2013
+Exame||Relatório de Inflação||2014
+Exame||Relatório de Inflação||2015
+Exame||Relatório de Inflação||2016
+Exame||Relatório de Inflação||2017
+Exame||Relatório de Inflação||2018
+Exame||Relatório de Inflação||2019
+Exame||Relatório de Inflação||2020
+Exame||Relatório de Inflação||2021
+Exame||Relatório de Inflação||2022
+Exame||Relatório de Inflação||2023
+Exame||Relatório de Inflação||2024
+Exame||Relatório de Inflação||2025
+Exame||Relatório de Inflação||2026
+Exame||Banco Central||2011
+Exame||Banco Central||2012
+Exame||Banco Central||2013
+Exame||Banco Central||2014
+Exame||Banco Central||2015
+Exame||Banco Central||2016
+Exame||Banco Central||2017
+Exame||Banco Central||2018
+Exame||Banco Central||2019
+Exame||Banco Central||2020
+Exame||Banco Central||2021
+Exame||Banco Central||2022
+Exame||Banco Central||2023
+Exame||Banco Central||2024
+G1||Copom||20110101-20260901
+Exame||Banco Central||2025

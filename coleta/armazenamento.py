@@ -42,6 +42,16 @@ def marcarFeita(chave: str) -> None:
         f.flush()
         os.fsync(f.fileno())
 
+def registrarLacunas(lacunas) -> None:
+    """Posts pulados por falha permanente do servidor e fatias incompletas,
+    para a seção de dados do artigo. Fica em dados/bruto/ (fora do Git)."""
+    if not lacunas:
+        return
+    os.makedirs(cfg.PASTA_BRUTO, exist_ok=True)
+    with open(os.path.join(cfg.PASTA_BRUTO, "_lacunas_coleta.txt"), "a", encoding="utf-8") as f:
+        for l in lacunas:
+            f.write(l + "\n")
+
 # %% Gravação
 
 def gravar(veiculo: str, registros) -> None:

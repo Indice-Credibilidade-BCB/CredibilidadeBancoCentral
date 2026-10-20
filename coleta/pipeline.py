@@ -3,16 +3,15 @@
 import json
 import os
 import re
-from datetime import datetime
 
 import pandas as pd
 
 import configuracao as cfg
-from armazenamento import carregarFeitas, gravar, marcarFeita
+from armazenamento import carregarFeitas, gravar, marcarFeita, registrarLacunas
 from planejamento import planejar
 from sincronizacao import gitEnviar, gitPuxar
 from utilitarios import desembrulharUrl, log, norm, slug
-from varredura import varrerGlobo, varrerWp
+from varredura import janelaWp, varrerGlobo, varrerWp
 
 # %% Divisão do trabalho
 
@@ -64,6 +63,14 @@ def coletarTudo(veiculos=None, termos=None, ini=None, fim=None, sondagem=None,
     for nome, conf in veiculos.items():
         log(f"═══ {nome} ({conf['motor']})")
 
+        if conf["motor"] == "globo-plano":
+            # G1: a busca não ordena por data, então o planejador não serve;
+            # g1.py tem plano fixo e registro próprio (mesmo ledger).
+            import g1
+            for r in g1.coletar(ini, fim):
+                resumo.append({"veiculo": nome, **r})
+            continue
+
         if conf["motor"] == "globo":
             plano = planejar(nome, conf["tenant"], termos, ini, fim, max_prof,
                              usarCache=not replanejar)
@@ -83,6 +90,9 @@ def coletarTudo(veiculos=None, termos=None, ini=None, fim=None, sondagem=None,
                 registros, info = varrerGlobo(linha["consulta"], nome,
                                               conf["tenant"], ini, fim)
                 gravar(nome, registros)
+                if not info["ok"]:
+                    log(f"  {linha['consulta']!r}: falha transitória — NÃO marcada; refeita na próxima rodada")
+                    continue
                 marcarFeita(chave)
                 feitas.add(chave)
                 desdePush += 1
@@ -103,16 +113,22 @@ def coletarTudo(veiculos=None, termos=None, ini=None, fim=None, sondagem=None,
                     # pensando que já foi coletado — vazio silencioso (visto
                     # na prática: InfoMoney/Money Times/Poder360 perderam
                     # 2020 inteiro numa rodada de backfill por causa disso).
-                    a = max(datetime(ano, 1, 1), ini)
-                    b = min(datetime(ano + 1, 1, 1), fim)
+                    a, b, ano_inteiro = janelaWp(ano, ini, fim)
                     if a >= b:
                         continue
-                    chave = f"{nome}||{termo}||{ano}"
+                    # Ano incompleto (ex.: 2026 até FIM) leva a janela na chave:
+                    # se FIM avançar depois, a fatia maior não é pulada.
+                    chave = (f"{nome}||{termo}||{ano}" if ano_inteiro
+                             else f"{nome}||{termo}||{a:%Y%m%d}-{b:%Y%m%d}")
                     if chave in feitas:
                         continue
                     registros, info = varrerWp(termo, nome, conf["base"], ano,
                                                ini, fim)
                     gravar(nome, registros)
+                    registrarLacunas(info["lacunas"])
+                    if not info["ok"]:
+                        log(f"  {termo!r} {ano}: falha transitória — NÃO marcada; refeita na próxima rodada")
+                        continue
                     marcarFeita(chave)
                     feitas.add(chave)
                     desdePush += 1
@@ -131,6 +147,42 @@ def coletarTudo(veiculos=None, termos=None, ini=None, fim=None, sondagem=None,
 
 # %% Consolidação
 
+JANELA_REPLICACAO = pd.Timedelta(days=2)
+
+
+def dataLocal(valor):
+    """Data e hora de Brasília, sem fuso: converte se o valor traz fuso; senão,
+    é a hora local do site (caso da API do WordPress)."""
+    t = pd.to_datetime(valor, errors="coerce")
+    if pd.isna(t):
+        return pd.NaT
+    return t if t.tzinfo is None else t.tz_convert("America/Sao_Paulo").tz_localize(None)
+
+
+def marcarReplicacao(df: pd.DataFrame) -> tuple[pd.Series, pd.Series]:
+    """(n_replicacoes, replicada) por linha; `df` já ordenado por data.
+
+    Um grupo de replicação reúne o mesmo título normalizado em veículos
+    diferentes, dentro de JANELA_REPLICACAO da primeira publicação do grupo.
+    A primeira publicação fica como original; as seguintes, como replicadas."""
+    n = pd.Series(1, index=df.index)
+    rep = pd.Series(False, index=df.index)
+    for _, g in df.groupby("chave_tit", sort=False):
+        if len(g) < 2:
+            continue
+        restantes = list(g.index)
+        while restantes:
+            i0 = restantes.pop(0)
+            t0, v0 = df.at[i0, "data"], df.at[i0, "veiculo"]
+            grupo = [i for i in restantes
+                     if df.at[i, "veiculo"] != v0 and df.at[i, "data"] - t0 <= JANELA_REPLICACAO]
+            if grupo:
+                n.loc[[i0, *grupo]] = 1 + len(grupo)
+                rep.loc[grupo] = True
+                restantes = [i for i in restantes if i not in grupo]
+    return n, rep
+
+
 def consolidar(exigirP2=True, puxar=True) -> pd.DataFrame:
     """Junta os arquivos brutos de TODOS os colaboradores e monta a base final:
     dados/noticias.csv e dados/para_llm.jsonl."""
@@ -139,14 +191,16 @@ def consolidar(exigirP2=True, puxar=True) -> pd.DataFrame:
     arquivos = ([os.path.join(cfg.PASTA_BRUTO, f)
                  for f in os.listdir(cfg.PASTA_BRUTO) if f.endswith(".jsonl")]
                 if os.path.isdir(cfg.PASTA_BRUTO) else [])
-    registros = []
+    registros, corrompidas = [], 0
     for a in arquivos:
         with open(a, encoding="utf-8") as f:
             for linha in f:
                 try:
                     registros.append(json.loads(linha))
                 except json.JSONDecodeError:
-                    pass
+                    corrompidas += 1
+    if corrompidas:
+        log(f"  {corrompidas} linha(s) corrompida(s) nos brutos foram ignoradas")
     if not registros:
         print("Nada coletado ainda.")
         return pd.DataFrame()
@@ -170,23 +224,25 @@ def consolidar(exigirP2=True, puxar=True) -> pd.DataFrame:
                               .str.rstrip("/").str.lower())
     dataframe = dataframe.drop_duplicates(subset="chave_url")
 
-    dataframe["data"] = pd.to_datetime(dataframe["data"], errors="coerce",
-                                       utc=True, format="mixed")
+    # Hora local de Brasília, sem fuso. A busca da Globo e a Bloomberg Línea
+    # trazem o fuso (UTC); a API do WordPress traz a hora local do site, SEM
+    # fuso. Ler tudo com utc=True tratava a hora local como UTC e atrasava as
+    # notícias do WordPress em 3 horas (corrigido em 2026-10-21).
+    dataframe["data"] = dataframe["data"].map(dataLocal)
     dataframe = dataframe[dataframe["data"].notna()]
-    dataframe["data"] = (dataframe["data"].dt.tz_convert("America/Sao_Paulo")
-                         .dt.tz_localize(None))
 
     dataframe = dataframe[dataframe["titulo"].notna() & dataframe["p1"].notna()]
     if exigirP2:
         dataframe = dataframe[dataframe["p2"].notna()]
 
-    # matéria de agência republicada: mesmo título em veículos diferentes
+    # matéria de agência republicada: mesmo título em veículos DIFERENTES,
+    # publicada até JANELA_REPLICACAO dias depois. Sem a janela e a exigência
+    # de outro veículo, títulos recorrentes de coluna ("Destaques", "Cartas
+    # de Leitores") eram marcados como replicados ao longo de 15 anos.
     dataframe["chave_tit"] = dataframe["titulo"].map(
         lambda t: re.sub(r"[^a-z0-9 ]", " ", norm(t)))
     dataframe = dataframe.sort_values("data")
-    dataframe["n_replicacoes"] = (dataframe.groupby("chave_tit")["chave_tit"]
-                                  .transform("size"))
-    dataframe["replicada"] = dataframe.duplicated(subset="chave_tit", keep="first")
+    dataframe["n_replicacoes"], dataframe["replicada"] = marcarReplicacao(dataframe)
 
     dataframe["texto_llm"] = dataframe.apply(lambda r: "\n\n".join(x for x in [
         f"TÍTULO: {r['titulo']}",
