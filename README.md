@@ -1,27 +1,27 @@
 # Índice de Credibilidade do Banco Central do Brasil
 
-Projeto de pesquisa (Iniciação Científica, FEA-USP) que constrói um índice de
-credibilidade do BCB extraído por LLM da **percepção de terceiros** (imprensa e
-research) e o testa em duas frentes: se rastreia a credibilidade latente
-implícita em expectativas e preços (**validade**) e se explica a heterogeneidade
-na transmissão de choques de política monetária (**utilidade**).
+Projeto de pesquisa (Iniciação Científica, FEA-USP) que mede a credibilidade
+percebida do BCB a partir do que a imprensa escreve sobre ele. Cada notícia é
+lida por um LLM, uma por chamada, com um instrumento fixo (prompt v1.1); o
+índice mensal e diário sai da dimensão D1 (a meta é crível?). O artigo é de
+medição: constrói o índice, testa o vazamento temporal do modelo e defende a
+validade de construto (convergente, discriminante, preditiva, encompassing
+contra o latente do Kalman e tempo real), com um estudo de eventos do Copom
+como aplicação.
 
-O desenho completo — pergunta de pesquisa, sistema de equações (Blocos 1–6),
-ressalvas metodológicas e plano de publicação — está no documento de contexto
-do projeto, mantido fora do repositório (`docs/local/`, não versionado).
+Desenho, decisões e auditorias ficam no documento de contexto do projeto,
+fora do repositório (`docs/local/`, não versionado).
 
 ## Mapa do repositório
 
-| Pasta | Etapa | O que é |
-|---|---|---|
-| [`coleta/`](coleta/) | 0 | Scraping do corpus de imprensa (busca da Globo + WordPress). Modular, multi-colaborador. |
-| [`mercado/`](mercado/) | 0 | Séries de mercado: curva DI, ETTJ, breakeven, CDS. |
-| [`llm/`](llm/) | 1–3 | Índice $\hat{C}^{LLM}_t$: prompts, provedores (Sabiá/Gemini/Groq/Claude + braço local BERTimbau), piloto de anotação, bateria anti-vazamento (T0–T6), agregação. |
-| [`mercado/bcb.py`](mercado/bcb.py) | 0 | Séries do BCB: SGS, Focus (IPCA 12m e Selic por reunião), metas e agenda do Copom. |
-| [`validacao/`](validacao/) | 4 | Kalman ($\hat{C}^{KF}_t$) e encompassing contra rivais → **Paper 1**. *Em desenvolvimento, ainda não versionado.* |
-| [`modelo/`](modelo/) | 5–7 | NK de 3 equações, projeções locais (Jordà), contrafactuais → **Paper 2**. *Em desenvolvimento, ainda não versionado.* |
-| [`docs/`](docs/) | — | Guia de anotação. Contexto, decisões e auditorias ficam em `docs/local/` (não versionado). |
-| `dados/` | — | Parcialmente versionado (ver abaixo): séries públicas e agregados sim, notícias não. |
+| Pasta | O que é |
+|---|---|
+| [`coleta/`](coleta/) | Coleta do corpus de imprensa: busca da Globo, WordPress REST, sitemaps. Multi-colaborador, retomável. |
+| [`llm/`](llm/) | Índice: prompt, provedores (Sabiá, Gemini e outros), pré-filtro BERTimbau com auditoria aleatória, bateria anti-vazamento (T0–T6), agregação, robustez e figuras do índice. |
+| [`mercado/`](mercado/) | Séries públicas: BCB (SGS, Focus, Copom), curvas da B3, Tesouro Direto, ANBIMA, breakeven. |
+| [`validacao/`](validacao/) | Validade de construto, encompassing, estudo de eventos e figuras do artigo. |
+| [`docs/`](docs/) | Guia de anotação. Contexto, decisões e auditorias ficam em `docs/local/` (não versionado). |
+| `dados/` | Parcialmente versionado (ver abaixo): séries públicas e agregados sim, notícias não. |
 
 As pastas usam nomes importáveis em Python (sem prefixo numérico) porque os
 módulos se importam entre si; a correspondência com as Etapas está na tabela.
@@ -39,8 +39,10 @@ de terceiros. **Isso não vai para o Git.** O `.gitignore` nega tudo dentro de
 - ✅ `dados/macro/` — séries brutas como foram baixadas (BCB SGS/Focus/Copom,
   Tesouro Direto, B3 TaxaSwap). Versionadas para a reprodução não depender de
   as fontes continuarem no ar.
-- ✅ `dados/derivados/` — índice mensal, bandas, contagens: agregados que não
-  permitem reconstruir os textos. É o que acompanha o paper.
+- ✅ `dados/derivados/` — índice mensal, diário e trimestral, contagens,
+  resultados da validação: agregados que não permitem reconstruir os textos.
+- ❌ `dados/terceiros/` — séries de fornecedor (CDS, EMBI+ e outras) que não
+  podem ser redistribuídas; os CSVs gravados pela validação saem sem elas.
 - ❌ `dados/bruto/`, `dados/noticias.csv`, `dados/llm/` — texto de terceiros.
 
 Se o repositório for público, isso é obrigatório. Se for privado, continua
@@ -63,16 +65,14 @@ Fluxo de ponta a ponta:
 cd coleta && python main.py       # ou célula a célula (# %%); consolidar()
                                   # gera dados/noticias.csv e dados/para_llm.jsonl
 
-# 2) Converter para o schema do índice e rodar o piloto — ver llm/README.md
+# 2) Corpus, notas do LLM e índice — ver llm/README.md
 cd ../llm
 python corpus/from_coleta.py
-python sample_pilot.py
+python producao_v11.py            # pontua e agrega -> dados/derivados/indice_*_v11_*.csv
 
-# 3) Séries de mercado e do BCB — ver mercado/README.md (rodar da raiz)
+# 3) Séries públicas e validação (rodar da raiz)
 cd ..
-python -m mercado.bcb                # SGS/Focus/Copom -> dados/macro/
-python -m mercado.lista2             # curvas, ETTJ, implícita -> dados/mercado/
+python -m mercado.bcb             # SGS/Focus/Copom -> dados/macro/
+python -m mercado.lista2          # curvas, ETTJ, implícita -> dados/mercado/
+python -m validacao.artigo        # bateria + relatório + figuras -> dados/derivados/validacao/artigo/
 ```
-
-As Etapas 4–7 (`validacao/`, `modelo/`) estão em desenvolvimento e entram no
-repositório quando estiverem prontas.
