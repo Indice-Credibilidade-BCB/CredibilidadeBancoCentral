@@ -1,0 +1,24 @@
+{
+  "logistico": {
+    "sigma_eta": 0.38621082208695573,
+    "sigma_nu": 0.43764644622035304,
+    "loglik": -211.53087386076047,
+    "sucesso": true,
+    "mensagem": "CONVERGENCE: REL_REDUCTION_OF_F_<=_FACTR*EPSMCH"
+  },
+  "linear": {
+    "sigma_eta": 0.2749455543447663,
+    "sigma_nu": 0.1218479395649149,
+    "loglik": -179.20268627130994,
+    "sucesso": true,
+    "mensagem": "CONVERGENCE: REL_REDUCTION_OF_F_<=_FACTR*EPSMCH"
+  },
+  "identificacao": {
+    "limiar_pp": 1.0,
+    "frac_meses_fracos": 0.2809364548494983,
+    "ganho_medio_fraco": 0.5198099997930022,
+    "ganho_medio_forte": 0.878402336862939,
+    "ep_medio_fraco": 0.15477034984170915,
+    "ep_medio_forte": 0.08584768303994365
+  }
+}

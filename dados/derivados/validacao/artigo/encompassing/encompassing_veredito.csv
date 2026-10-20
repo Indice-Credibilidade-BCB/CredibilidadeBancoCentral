@@ -1,0 +1,8 @@
+variante_llm,n_regressoes,b1_sig_sem_rival,n_rivais_testados,n_rivais_sobrevive,sobrevive_a_todos,sinal_b1_estavel,b1_min,b1_max
+c_llm,10,True,9,5,False,False,-0.009660369638991195,0.516957607791898
+c_llm_dupla,10,True,9,4,False,False,-0.009618225149462216,0.3312573944650443
+c_llm_gemini,10,True,9,6,False,False,-0.07603619809663589,0.655262036593103
+c_llm_gemjm3,10,True,9,6,False,False,-0.0856616792587538,0.719708995525795
+c_llm_jm3,10,True,9,5,False,False,-0.02226593241522243,0.6479208772851514
+c_llm_vmax_dupla,10,True,9,4,False,False,-0.009618225149462216,0.3312573944650443
+c_llm_vmin_dupla,10,False,9,1,False,False,-0.077320323226538,0.16723236053340867
