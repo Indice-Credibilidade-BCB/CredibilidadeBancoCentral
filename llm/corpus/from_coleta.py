@@ -101,7 +101,7 @@ def converter(raw: pd.DataFrame, veiculos_tipo: dict | None = None) -> pd.DataFr
 
     # `dados/noticias.csv` já traz a hora de Brasília SEM fuso (consolidar()).
     # Ler com utc=True tratava essa hora local como UTC e atrasava a data em
-    # 3 horas: 4,3% do corpus caía no dia anterior (corrigido em 2026-10-21).
+    # 3 horas: 4,3% do corpus caía no dia anterior (corrigido em 2026-10-20).
     # Um valor com fuso explícito ainda é convertido para Brasília.
     data = raw["data"].map(_data_local)
     sem_data = int(data.isna().sum())

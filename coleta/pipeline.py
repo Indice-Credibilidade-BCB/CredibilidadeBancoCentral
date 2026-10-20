@@ -227,7 +227,7 @@ def consolidar(exigirP2=True, puxar=True) -> pd.DataFrame:
     # Hora local de Brasília, sem fuso. A busca da Globo e a Bloomberg Línea
     # trazem o fuso (UTC); a API do WordPress traz a hora local do site, SEM
     # fuso. Ler tudo com utc=True tratava a hora local como UTC e atrasava as
-    # notícias do WordPress em 3 horas (corrigido em 2026-10-21).
+    # notícias do WordPress em 3 horas (corrigido em 2026-10-20).
     dataframe["data"] = dataframe["data"].map(dataLocal)
     dataframe = dataframe[dataframe["data"].notna()]
 
