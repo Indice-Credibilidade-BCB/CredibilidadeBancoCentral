@@ -5,7 +5,8 @@
 
 # Veículos do corpus de produção. Uma fonte nova (Exame, G1, Bloomberg Línea)
 # só entra depois de pontuada e comparada à série principal no período comum.
-veiculos_corpus: [Valor, O Globo, InfoMoney, Money Times, Poder360]
+veiculos_corpus: [Valor, O Globo, InfoMoney, Money Times, Poder360,
+                  Exame, G1, CartaCapital, Bloomberg Línea, Agência Brasil, Folha]  # 4.2.20
 
 # Caminhos relativos a llm/. Tudo que contém texto de terceiros vive em
 # dados/ na raiz do repositório, que NÃO é versionado (ver .gitignore).

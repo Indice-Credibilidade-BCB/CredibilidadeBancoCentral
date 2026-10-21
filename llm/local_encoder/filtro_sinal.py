@@ -104,6 +104,16 @@ def treinar(df_rot: pd.DataFrame, out_dir: pathlib.Path, epocas: int = 3, batch_
            "fracao_descartada_teste": float(descarta[teste].mean()),
            "sinal_perdido_teste": int((descarta & pos_teste).sum()),
            "minutos_treino": (time.time() - t0) / 60, "dispositivo": disp.descrever(dev)}
+    if "veiculo" in df:
+        # sensibilidade por veículo na metade de teste (docs/local 4.2.20)
+        veic = df["veiculo"].to_numpy()[iv]
+        por = {}
+        for v in sorted(set(veic[pos_teste])):
+            m = pos_teste & (veic == v)
+            a, n = int((~descarta & m).sum()), int(m.sum())
+            por[v] = {"sensibilidade": a / n, "positivos": n,
+                      "li95": float(beta.ppf(0.05, a, n - a + 1)) if a else 0.0}
+        met["sensibilidade_teste_por_veiculo"] = por
     out_dir.mkdir(parents=True, exist_ok=True)
     torch.save({"state_dict": {k: v.detach().cpu() for k, v in modelo.state_dict().items()},
                 "modelo_base": MODELO_PADRAO, "num_classes": 2, "limiar": float(limiar)},

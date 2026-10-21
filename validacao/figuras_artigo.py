@@ -121,33 +121,79 @@ def fig_funil() -> None:
     ax.text(c["api_com_sinal"] + 6500, y[3], f"sinal perdido pelo filtro, estimado pela auditoria: ≈ "
             f"{_br(c['sinal_perdido_estimado'], 0)} notícias ({_br(100 * c['fracao_sinal_perdido_estimada'])}% do sinal)",
             va="center", fontsize=8, color=TINTA2)
-    ax.set_title("Seis em cada dez notícias nunca foram ao LLM; o filtro perde cerca de 4% do sinal")
+    ax.set_title(f"{_br(100 * c['fracao_producao_nao_enviada'], 0)}% da produção nunca foi ao LLM; o filtro perde "
+                 f"cerca de {_br(100 * c['fracao_sinal_perdido_estimada'], 0)}% do sinal")
     _salvar(fig, "fig01_funil_corpus")
 
 
 # ── 2. cobertura por veículo e ano ──────────────────────────────────────────
 
 def fig_cobertura() -> None:
+    """Barras empilhadas por ano (os 5 maiores veículos em cor, o resto em
+    cinza) e, embaixo, a tabela com todos os veículos e a linha de total."""
     corpus = pd.read_parquet(RAIZ / "dados" / "llm" / "corpus.parquet", columns=["veiculo", "data_publicacao"])
     corpus["ano"] = pd.to_datetime(corpus["data_publicacao"], format="mixed").dt.year
-    tab = pd.crosstab(corpus["ano"], corpus["veiculo"])
-    ordem = ["InfoMoney", "Valor", "Money Times", "Poder360", "O Globo"]
-    tab = tab[[v for v in ordem if v in tab]]
-    fig, ax = plt.subplots(figsize=(LARGURA, 2.9))
-    base = np.zeros(len(tab))
-    for v, cor in zip(tab.columns, [AZUL, LARANJA, AGUA, AMARELO, MAGENTA]):
-        ax.bar(tab.index, tab[v], bottom=base, width=0.74, color=cor, label=v, edgecolor="white", lw=0.6)
-        base += tab[v].to_numpy()
-    for x, t in zip(tab.index, base):
-        ax.text(x, t + 120, f"{t / 1000:.1f}".replace(".", ","), ha="center", fontsize=7, color=TINTA2)
-    ax.set_xticks(tab.index, [str(a) if a % 2 == 1 else "" for a in tab.index])
+    tab = pd.crosstab(corpus["veiculo"], corpus["ano"])
+    tab = tab.loc[tab.sum(axis=1).sort_values(ascending=False).index]
+    anos = tab.columns.to_numpy()
+    cores = [AZUL, LARANJA, AGUA, AMARELO, MAGENTA]
+    grandes, outros = list(tab.index[:5]), list(tab.index[5:])
+
+    fig = plt.figure(figsize=(LARGURA, 6.2))
+    gs = fig.add_gridspec(2, 1, height_ratios=[1.0, 1.05], hspace=0.10)
+    ax = fig.add_subplot(gs[0])
+    xs = np.arange(len(anos)) + 0.5   # mesmas colunas da tabela de baixo
+    base = np.zeros(len(anos))
+    for v, cor in zip(grandes, cores):
+        ax.bar(xs, tab.loc[v], bottom=base, width=0.78, color=cor, label=v, edgecolor="white", lw=0.6)
+        base += tab.loc[v].to_numpy()
+    if outros:
+        resto = tab.loc[outros].sum()
+        ax.bar(xs, resto, bottom=base, width=0.78, color=CINZA_CLARO, edgecolor="white", lw=0.6,
+               label=f"outros {len(outros)} veículos")
+        base += resto.to_numpy()
+    for x, tot in zip(xs, base):
+        ax.text(x, tot + base.max() * 0.012, f"{tot / 1000:.1f}".replace(".", ","), ha="center", fontsize=7,
+                color=TINTA2)
+    ax.set_xlim(0, len(anos) + 1)
+    ax.set_xticks([])
     ax.set_ylabel("notícias por ano")
-    ax.legend(ncol=5, loc="upper left", bbox_to_anchor=(0, -0.1), handlelength=1, columnspacing=1.2)
+    ax.legend(ncol=3, loc="upper left", handlelength=1, columnspacing=1.2, fontsize=7.5)
     _eixo(ax)
     ax.yaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda v, _: f"{v / 1000:.0f} mil" if v else "0"))
-    ax.set_title("Até 2015 o corpus é InfoMoney e Valor; o volume quadruplica até 2023")
-    ax.text(1.0, -0.26, "Totais em milhares. 2026 vai até 1º de setembro.", transform=ax.transAxes, ha="right",
-            fontsize=7, color=TINTA2)
+    ax.set_ylim(0, base.max() * 1.22)
+    ax.set_title(f"Corpus com {len(tab)} veículos: {_br(len(corpus), 0)} notícias de 2011 a 2026")
+
+    # tabela: veículo × ano, sombreada em azul pela contagem, total na última linha
+    tb = fig.add_subplot(gs[1])
+    linhas = list(tab.index) + ["Total"]
+    cols = [str(a) for a in anos] + ["Total"]
+    m = np.vstack([np.c_[tab.to_numpy(), tab.sum(axis=1).to_numpy()],
+                   np.r_[tab.sum().to_numpy(), tab.to_numpy().sum()]])
+    escala = matplotlib.colors.LinearSegmentedColormap.from_list("azul", ["#ffffff", "#cfe0f6", AZUL])
+    vmax = tab.to_numpy().max()
+    for i, nome in enumerate(linhas):
+        for j in range(len(cols)):
+            v = int(m[i, j])
+            total = i == len(linhas) - 1 or j == len(cols) - 1
+            fundo = "#f1f0ec" if total else escala(min(v / vmax, 1.0) ** 0.6)
+            tb.add_patch(matplotlib.patches.Rectangle((j, i), 1, 1, facecolor=fundo, edgecolor="white", lw=1.2))
+            escuro = (not total) and v / vmax > 0.45
+            tb.text(j + 0.5, i + 0.5, "" if v == 0 else _br(v, 0), ha="center", va="center",
+                    fontsize=5.6 if j < len(anos) else 6, color="white" if escuro else TINTA,
+                    fontweight="bold" if total else "normal")
+    tb.set_xlim(0, len(cols)); tb.set_ylim(len(linhas), 0)
+    tb.set_xticks(np.arange(len(cols)) + 0.5, cols, fontsize=6.5)
+    tb.xaxis.tick_top()
+    tb.set_yticks(np.arange(len(linhas)) + 0.5, linhas, fontsize=7)
+    for lbl in tb.get_yticklabels()[-1:]:
+        lbl.set_fontweight("bold")
+    tb.tick_params(length=0)
+    for s in tb.spines.values():
+        s.set_visible(False)
+    tb.text(0, len(linhas) + 0.55, "Notícias no tema depois do dedup do corpus (inclui a quarentena de 10%). "
+             "2026 vai até 1º de setembro. Agência Brasil ainda em coleta.", fontsize=6.8, color=TINTA2,
+            va="top", ha="left")
     _salvar(fig, "fig02_cobertura_veiculos")
 
 
@@ -218,10 +264,14 @@ def fig_robustez() -> None:
         {"versao": "prompt_v10", "agregacao": "mensal", "corr": v11["c_llm"].corr(v11["v10"])}])
     t = pd.concat([rob[["versao", "agregacao", "corr"]], extra], ignore_index=True)
     nomes = {"gemini": "Outro modelo (Gemini)", "fe_veiculo": "Efeito fixo por veículo",
-             "constante": "Só veículos da série inteira", "so_infomoney": "Só InfoMoney", "so_valor": "Só Valor",
+             "constante": "Só veículos da série inteira", "so_originais": "Só os 5 veículos originais",
+             "so_infomoney": "Só InfoMoney", "so_valor": "Só Valor",
              "amostra_aleatoria": "Só a amostra aleatória (sem filtro)", "prompt_v10": "Prompt v1.0"}
+    for v in sorted(x for x in t["versao"].unique() if str(x).startswith("sem_")):
+        nomes[v] = "Sem " + v[4:].replace("_", " ")
+    nomes = {k: n for k, n in nomes.items() if k in set(t["versao"])}
     ordem = list(nomes)
-    fig, ax = plt.subplots(figsize=(LARGURA, 2.9))
+    fig, ax = plt.subplots(figsize=(LARGURA, 0.9 + 0.26 * len(ordem)))
     for i, v in enumerate(ordem[::-1]):
         for ag, mk, cor in (("mensal", "o", CINZA), ("jm3", "o", AZUL)):
             r = t[(t["versao"] == v) & (t["agregacao"] == ag)]
@@ -232,14 +282,14 @@ def fig_robustez() -> None:
     uniq = dict(zip(lab, h))
     ax.legend(uniq.values(), uniq.keys(), loc="lower left")
     ax.set_yticks(range(len(ordem)), [nomes[v] for v in ordem[::-1]])
-    ax.set_xlim(0.75, 1.0)
+    ax.set_xlim(min(0.75, np.floor(t["corr"].min() * 20) / 20), 1.0)
     ax.xaxis.set_major_formatter(_VIRGULA)
     ax.set_xlabel("correlação com o índice principal")
     ax.grid(axis="x", color=GRADE, lw=0.6)
     for s in ("top", "right", "left"):
         ax.spines[s].set_visible(False)
     ax.tick_params(axis="y", length=0)
-    ax.set_title("O índice muda pouco com o modelo, os veículos, o filtro ou o prompt")
+    ax.set_title("Correlação do índice principal com versões alternativas da construção")
     _salvar(fig, "fig05_robustez")
 
 
@@ -273,7 +323,7 @@ def fig_vazamento() -> None:
     ax.tick_params(axis="y", length=0)
     for s in ("top", "right", "left"):
         ax.spines[s].set_visible(False)
-    ax.set_title("Esconder a data ou os nomes quase não muda a nota, e o que muda não antecipa o futuro")
+    ax.set_title("Notas com a data e os nomes escondidos (V-min) contra as notas com o texto inteiro (V-max)")
     fig.text(0.01, -0.1, "Bateria v1.1, Sabiá, 150 notícias estratificadas por episódio. "
              "T3-L4 é significativo a 5%, mas apoiado em 2 notícias e abaixo do limite do critério.",
              fontsize=7, color=TINTA2)
@@ -303,7 +353,7 @@ def fig_convergencia() -> None:
         ax.set_ylabel("desvios-padrão")
         _eixo(ax)
     _anos(axs[-1])
-    fig.suptitle("O índice acompanha expectativas e preços; o latente do Kalman mede outra coisa",
+    fig.suptitle("Índice contra as medidas de credibilidade do painel, padronizadas",
                  x=0.01, ha="left", fontsize=9.5, fontweight="bold", y=0.995)
     fig.legend([matplotlib.lines.Line2D([], [], color=AZUL, lw=1.4), matplotlib.lines.Line2D([], [], color=CINZA, lw=1.1)],
                ["índice (janela de 3 meses)", "medida do painel"], loc="upper left", bbox_to_anchor=(0.01, 0.965), ncol=2)

@@ -5,7 +5,9 @@ Tudo é reagregação das notas já existentes: nenhuma chamada nova ao LLM.
 
 - Composição de veículos (seção 5): o corpus muda muito no tempo (até 2015
   só InfoMoney e Valor). Três versões contra a principal:
-    * constante: só os veículos presentes em toda a série (InfoMoney, Valor);
+    * constante: só os veículos presentes em toda a série (calculado do corpus);
+    * so_originais: só os 5 veículos do corpus antes das fontes novas;
+    * sem_<fonte>: o índice sem cada fonte nova, uma de cada vez;
     * fe_veiculo: efeito fixo por VEÍCULO (a principal ajusta só por tipo,
       e hoje todo o corpus é "imprensa", então o ajuste é nulo). Como o
       veículo passa a fazer o papel do tipo, o colapso de wire entre
@@ -32,7 +34,14 @@ import schema
 RAIZ = pathlib.Path(__file__).resolve().parent.parent
 DERIV = RAIZ / "dados" / "derivados"
 PRODUCAO = RAIZ / "dados" / "llm" / "producao_v11"
-CONSTANTES = ("InfoMoney", "Valor")
+ORIGINAIS = ("Valor", "O Globo", "InfoMoney", "Money Times", "Poder360")   # corpus antes de 4.2.20
+
+
+def constantes(corpus: pd.DataFrame) -> list[str]:
+    """Veículos com notícia em todos os anos da janela (antes: InfoMoney e Valor)."""
+    anos = pd.to_datetime(corpus["data_publicacao"], format="mixed").dt.year
+    por = corpus.assign(ano=anos).groupby("veiculo")["ano"].nunique()
+    return sorted(por[por == anos.nunique()].index)
 
 
 def _scores_e_corpus() -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -72,12 +81,15 @@ def versoes() -> dict[str, dict[int, pd.DataFrame]]:
     corpus_fe = corpus.assign(tipo_veiculo=corpus["veiculo"])
     rot = ids_rotulagem()
     receitas = {
-        "constante": (sc, corpus[corpus["veiculo"].isin(CONSTANTES)]),
+        "constante": (sc, corpus[corpus["veiculo"].isin(constantes(corpus))]),
+        "so_originais": (sc, corpus[corpus["veiculo"].isin(ORIGINAIS)]),
         "fe_veiculo": (sc, corpus_fe),
         "so_infomoney": (sc, corpus[corpus["veiculo"] == "InfoMoney"]),
         "so_valor": (sc, corpus[corpus["veiculo"] == "Valor"]),
         "amostra_aleatoria": (sc[sc["item_id"].astype(str).isin(rot)], corpus),
     }
+    for v in sorted(set(corpus["veiculo"]) - set(ORIGINAIS)):   # robustez "sem a fonte" (4.2.20)
+        receitas["sem_" + v.lower().replace(" ", "_")] = (sc, corpus[corpus["veiculo"] != v])
     return {nome: {j: _serie(s, c, j) for j in (1, 3)} for nome, (s, c) in receitas.items()}
 
 

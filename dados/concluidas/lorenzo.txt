@@ -626,3 +626,301 @@ Exame||Banco Central||2023
 Exame||Banco Central||2024
 G1||Copom||20110101-20260901
 Exame||Banco Central||2025
+Exame||Copom||20260101-20260901
+Exame||Banco Central||2026
+Exame||Selic||20260101-20260901
+Exame||ata do Copom||2012
+Exame||ata do Copom||20260101-20260901
+G1||Selic||20110101-20260901
+Exame||política monetária||20260101-20260901
+Exame||meta de inflação||2014
+Exame||meta de inflação||20260101-20260901
+Exame||Relatório de Inflação||20260101-20260901
+G1||ata do Copom||20110101-20260901
+Exame||Banco Central||20260101-20260901
+G1||política monetária||20110101-20260901
+G1||meta de inflação||20110101-20260901
+CartaCapital||Copom||2011
+CartaCapital||Copom||2012
+CartaCapital||Copom||2013
+CartaCapital||Copom||2014
+CartaCapital||Copom||2015
+CartaCapital||Copom||2016
+CartaCapital||Copom||2017
+CartaCapital||Copom||2018
+CartaCapital||Copom||2019
+CartaCapital||Copom||2020
+CartaCapital||Copom||2021
+CartaCapital||Copom||2022
+CartaCapital||Copom||2023
+CartaCapital||Copom||2024
+CartaCapital||Copom||2025
+CartaCapital||Copom||20260101-20260901
+CartaCapital||Selic||2011
+G1||Relatório de Inflação||20110101-20260901
+CartaCapital||Selic||2012
+CartaCapital||Selic||2013
+CartaCapital||Selic||2014
+CartaCapital||Selic||2015
+CartaCapital||Selic||2016
+CartaCapital||Selic||2017
+CartaCapital||Selic||2018
+CartaCapital||Selic||2019
+CartaCapital||Selic||2020
+CartaCapital||Selic||2021
+CartaCapital||Selic||2022
+CartaCapital||Selic||2023
+CartaCapital||Selic||2024
+CartaCapital||Selic||2025
+CartaCapital||Selic||20260101-20260901
+CartaCapital||ata do Copom||2011
+CartaCapital||ata do Copom||2012
+CartaCapital||ata do Copom||2013
+CartaCapital||ata do Copom||2014
+CartaCapital||ata do Copom||2015
+CartaCapital||ata do Copom||2016
+CartaCapital||ata do Copom||2017
+CartaCapital||ata do Copom||2018
+CartaCapital||ata do Copom||2019
+CartaCapital||ata do Copom||2020
+CartaCapital||ata do Copom||2021
+G1||Banco Central||20110101-20260901
+CartaCapital||ata do Copom||2022
+CartaCapital||ata do Copom||2023
+CartaCapital||ata do Copom||2024
+CartaCapital||ata do Copom||2025
+CartaCapital||ata do Copom||20260101-20260901
+CartaCapital||política monetária||2011
+CartaCapital||política monetária||2012
+CartaCapital||política monetária||2013
+CartaCapital||política monetária||2014
+CartaCapital||política monetária||2015
+CartaCapital||política monetária||2016
+CartaCapital||política monetária||2017
+CartaCapital||política monetária||2018
+CartaCapital||política monetária||2019
+CartaCapital||política monetária||2020
+CartaCapital||política monetária||2021
+CartaCapital||política monetária||2022
+CartaCapital||política monetária||2023
+G1||Copom Tombini||20110101-20260901
+CartaCapital||política monetária||2024
+CartaCapital||política monetária||2025
+CartaCapital||política monetária||20260101-20260901
+CartaCapital||meta de inflação||2011
+CartaCapital||meta de inflação||2012
+CartaCapital||meta de inflação||2013
+CartaCapital||meta de inflação||2014
+CartaCapital||meta de inflação||2015
+CartaCapital||meta de inflação||2016
+CartaCapital||meta de inflação||2017
+CartaCapital||meta de inflação||2018
+CartaCapital||meta de inflação||2019
+CartaCapital||meta de inflação||2020
+CartaCapital||meta de inflação||2021
+CartaCapital||meta de inflação||2022
+G1||Copom Ilan Goldfajn||20110101-20260901
+CartaCapital||meta de inflação||2023
+CartaCapital||meta de inflação||2024
+CartaCapital||meta de inflação||2025
+CartaCapital||meta de inflação||20260101-20260901
+CartaCapital||Relatório de Inflação||2011
+CartaCapital||Relatório de Inflação||2012
+CartaCapital||Relatório de Inflação||2013
+CartaCapital||Relatório de Inflação||2014
+CartaCapital||Relatório de Inflação||2015
+CartaCapital||Relatório de Inflação||2016
+CartaCapital||Relatório de Inflação||2017
+CartaCapital||Relatório de Inflação||2018
+CartaCapital||Relatório de Inflação||2019
+CartaCapital||Relatório de Inflação||2020
+CartaCapital||Relatório de Inflação||2021
+CartaCapital||Relatório de Inflação||2022
+CartaCapital||Relatório de Inflação||2023
+G1||Copom Roberto Campos Neto||20110101-20260901
+CartaCapital||Relatório de Inflação||2024
+CartaCapital||Relatório de Inflação||2025
+CartaCapital||Relatório de Inflação||20260101-20260901
+CartaCapital||Banco Central||2011
+CartaCapital||Banco Central||2012
+CartaCapital||Banco Central||2013
+CartaCapital||Banco Central||2014
+CartaCapital||Banco Central||2015
+CartaCapital||Banco Central||2016
+CartaCapital||Banco Central||2017
+folha-busca|Folha|Copom|2011
+CartaCapital||Banco Central||2018
+CartaCapital||Banco Central||2019
+folha-busca|Folha|Copom|2012
+CartaCapital||Banco Central||2020
+CartaCapital||Banco Central||2021
+G1||Copom Galípolo||20110101-20260901
+folha-busca|Folha|Copom|2013
+CartaCapital||Banco Central||2022
+folha-busca|Folha|Copom|2014
+folha-busca|Folha|Copom|2015
+CartaCapital||Banco Central||2023
+G1||Selic Tombini||20110101-20260901
+folha-busca|Folha|Copom|2016
+CartaCapital||Banco Central||2024
+folha-busca|Folha|Copom|2017
+CartaCapital||Banco Central||2025
+folha-busca|Folha|Copom|2018
+CartaCapital||Banco Central||20260101-20260901
+folha-busca|Folha|Copom|2019
+G1||Selic Ilan Goldfajn||20110101-20260901
+folha-busca|Folha|Copom|2020
+folha-busca|Folha|Copom|2021
+folha-busca|Folha|Copom|2022
+folha-busca|Folha|Copom|2023
+folha-busca|Folha|Copom|2024
+G1||Selic Roberto Campos Neto||20110101-20260901
+folha-busca|Folha|Copom|2025
+folha-busca|Folha|Copom|2026
+G1||Selic Galípolo||20110101-20260901
+folha-busca|Folha|Selic|2011
+folha-busca|Folha|Selic|2012
+folha-busca|Folha|Selic|2013
+G1||ata do Copom Tombini||20110101-20260901
+folha-busca|Folha|Selic|2014
+folha-busca|Folha|Selic|2015
+folha-busca|Folha|Selic|2016
+folha-busca|Folha|Selic|2017
+G1||ata do Copom Ilan Goldfajn||20110101-20260901
+folha-busca|Folha|Selic|2018
+folha-busca|Folha|Selic|2019
+folha-busca|Folha|Selic|2020
+folha-busca|Folha|Selic|2021
+folha-busca|Folha|Selic|2022
+folha-busca|Folha|Selic|2023
+G1||ata do Copom Roberto Campos Neto||20110101-20260901
+folha-busca|Folha|Selic|2024
+folha-busca|Folha|Selic|2025
+folha-busca|Folha|Selic|2026
+folha-busca|Folha|ata do Copom|2011
+folha-busca|Folha|ata do Copom|2012
+folha-busca|Folha|ata do Copom|2013
+folha-busca|Folha|ata do Copom|2014
+G1||ata do Copom Galípolo||20110101-20260901
+folha-busca|Folha|ata do Copom|2015
+folha-busca|Folha|ata do Copom|2016
+folha-busca|Folha|ata do Copom|2017
+folha-busca|Folha|ata do Copom|2018
+folha-busca|Folha|ata do Copom|2019
+folha-busca|Folha|ata do Copom|2020
+G1||política monetária Tombini||20110101-20260901
+folha-busca|Folha|ata do Copom|2021
+folha-busca|Folha|ata do Copom|2022
+folha-busca|Folha|ata do Copom|2023
+folha-busca|Folha|ata do Copom|2024
+folha-busca|Folha|ata do Copom|2025
+G1||política monetária Ilan Goldfajn||20110101-20260901
+folha-busca|Folha|ata do Copom|2026
+folha-busca|Folha|política monetária|2011
+folha-busca|Folha|política monetária|2012
+folha-busca|Folha|política monetária|2013
+folha-busca|Folha|política monetária|2014
+folha-busca|Folha|política monetária|2015
+G1||política monetária Roberto Campos Neto||20110101-20260901
+folha-busca|Folha|política monetária|2016
+folha-busca|Folha|política monetária|2017
+folha-busca|Folha|política monetária|2018
+folha-busca|Folha|política monetária|2019
+folha-busca|Folha|política monetária|2020
+folha-busca|Folha|política monetária|2021
+folha-busca|Folha|política monetária|2022
+folha-busca|Folha|política monetária|2023
+folha-busca|Folha|política monetária|2024
+G1||política monetária Galípolo||20110101-20260901
+folha-busca|Folha|política monetária|2025
+folha-busca|Folha|política monetária|2026
+folha-busca|Folha|meta de inflação|2011
+folha-busca|Folha|meta de inflação|2012
+folha-busca|Folha|meta de inflação|2013
+folha-busca|Folha|meta de inflação|2014
+folha-busca|Folha|meta de inflação|2015
+G1||meta de inflação Tombini||20110101-20260901
+folha-busca|Folha|meta de inflação|2016
+folha-busca|Folha|meta de inflação|2017
+folha-busca|Folha|meta de inflação|2018
+folha-busca|Folha|meta de inflação|2019
+folha-busca|Folha|meta de inflação|2020
+folha-busca|Folha|meta de inflação|2021
+folha-busca|Folha|meta de inflação|2022
+folha-busca|Folha|meta de inflação|2023
+G1||meta de inflação Ilan Goldfajn||20110101-20260901
+folha-busca|Folha|meta de inflação|2024
+folha-busca|Folha|meta de inflação|2025
+folha-busca|Folha|meta de inflação|2026
+folha-busca|Folha|Relatório de Inflação|2011
+folha-busca|Folha|Relatório de Inflação|2012
+folha-busca|Folha|Relatório de Inflação|2013
+folha-busca|Folha|Relatório de Inflação|2014
+folha-busca|Folha|Relatório de Inflação|2015
+G1||meta de inflação Roberto Campos Neto||20110101-20260901
+folha-busca|Folha|Relatório de Inflação|2016
+folha-busca|Folha|Relatório de Inflação|2017
+folha-busca|Folha|Relatório de Inflação|2018
+folha-busca|Folha|Relatório de Inflação|2019
+folha-busca|Folha|Relatório de Inflação|2020
+folha-busca|Folha|Relatório de Inflação|2021
+G1||meta de inflação Galípolo||20110101-20260901
+folha-busca|Folha|Relatório de Inflação|2022
+folha-busca|Folha|Relatório de Inflação|2023
+folha-busca|Folha|Relatório de Inflação|2024
+folha-busca|Folha|Relatório de Inflação|2025
+folha-busca|Folha|Relatório de Inflação|2026
+folha-busca|Folha|Banco Central|2011
+folha-busca|Folha|Banco Central|2012
+G1||Relatório de Inflação Tombini||20110101-20260901
+folha-busca|Folha|Banco Central|2013
+folha-busca|Folha|Banco Central|2014
+folha-busca|Folha|Banco Central|2015
+folha-busca|Folha|Banco Central|2016
+folha-busca|Folha|Banco Central|2017
+G1||Relatório de Inflação Ilan Goldfajn||20110101-20260901
+folha-busca|Folha|Banco Central|2018
+folha-busca|Folha|Banco Central|2019
+folha-busca|Folha|Banco Central|2020
+folha-busca|Folha|Banco Central|2021
+folha-busca|Folha|Banco Central|2022
+folha-busca|Folha|Banco Central|2023
+folha-busca|Folha|Banco Central|2024
+folha-busca|Folha|Banco Central|2025
+G1||Relatório de Inflação Roberto Campos Neto||20110101-20260901
+folha-busca|Folha|Banco Central|2026
+G1||Relatório de Inflação Galípolo||20110101-20260901
+G1||Banco Central Tombini||20110101-20260901
+G1||Banco Central Ilan Goldfajn||20110101-20260901
+G1||Banco Central Roberto Campos Neto||20110101-20260901
+G1||Banco Central Galípolo||20110101-20260901
+G1||Copom Selic||20110101-20260901
+G1||Copom inflação||20110101-20260901
+G1||Copom reunião||20110101-20260901
+G1||Copom comunicado||20110101-20260901
+G1||Selic Copom||20110101-20260901
+G1||Selic inflação||20110101-20260901
+G1||Selic reunião||20110101-20260901
+G1||Selic comunicado||20110101-20260901
+G1||ata do Copom Selic||20110101-20260901
+G1||ata do Copom inflação||20110101-20260901
+G1||ata do Copom reunião||20110101-20260901
+G1||ata do Copom comunicado||20110101-20260901
+G1||política monetária Copom||20110101-20260901
+G1||política monetária Selic||20110101-20260901
+G1||política monetária inflação||20110101-20260901
+G1||política monetária reunião||20110101-20260901
+G1||política monetária comunicado||20110101-20260901
+G1||meta de inflação Copom||20110101-20260901
+G1||meta de inflação Selic||20110101-20260901
+G1||meta de inflação reunião||20110101-20260901
+G1||meta de inflação comunicado||20110101-20260901
+G1||Relatório de Inflação Copom||20110101-20260901
+G1||Relatório de Inflação Selic||20110101-20260901
+G1||Relatório de Inflação reunião||20110101-20260901
+G1||Relatório de Inflação comunicado||20110101-20260901
+G1||Banco Central Copom||20110101-20260901
+G1||Banco Central Selic||20110101-20260901
+G1||Banco Central inflação||20110101-20260901
+G1||Banco Central reunião||20110101-20260901
+G1||Banco Central comunicado||20110101-20260901
