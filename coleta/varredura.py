@@ -86,16 +86,24 @@ def varrerWp(termo, veiculo, base, ano, ini, fim):
             if casaTermo(reg["titulo"], reg["subtitulo"], reg["p1"]):
                 registros.append(reg)
 
-    pagina = 1
+    pagina, total = 1, None
     while True:
+        # A Exame responde 502 (e não 400) a uma página depois da última:
+        # sabendo o total (X-WP-Total), nem pede.
+        if total is not None and (pagina - 1) * 100 >= total:
+            break
         try:
             r = _getWp(base, veiculo, dict(params, per_page=100, page=pagina))
         except requests.exceptions.RetryError:
             # Uma matéria que quebra o servidor derruba a página inteira com
             # 502 (visto na Exame, "ata do Copom" 2012, página 3). Refaz a
             # página em pedaços menores e pula só o que continuar falhando.
-            posts, acabou, lacunas = _paginaEmPedacos(base, veiculo, params, pagina)
+            posts, acabou, lacunas = _paginaEmPedacos(base, veiculo, params, pagina, total)
             info["lacunas"] += lacunas
+            # post isolado pulado: a fatia vale (a lacuna fica registrada);
+            # várias falhas seguidas: a fatia é refeita na próxima rodada
+            if any("INCOMPLETA" in x for x in lacunas):
+                info["ok"] = False
             processar(posts)
             if acabou:
                 break
@@ -103,6 +111,7 @@ def varrerWp(termo, veiculo, base, ano, ini, fim):
             continue
         if pagina == 1:
             info["total"] = r.headers.get("X-WP-Total")
+            total = int(info["total"]) if str(info["total"]).isdigit() else None
         if r.status_code == 400 and pagina > 1:   # pediu a página depois da última
             break
         if r.status_code != 200:
@@ -125,7 +134,7 @@ def _getWp(base, veiculo, params):
     return r
 
 
-def _paginaEmPedacos(base, veiculo, params, pagina, pedaco=10, max_falhas_seguidas=3):
+def _paginaEmPedacos(base, veiculo, params, pagina, total=None, pedaco=10, max_falhas_seguidas=3):
     """Os mesmos 100 posts da `pagina`, em páginas de `pedaco`; um pedaço que
     falhe é refeito post a post, e o post que ainda falhar é pulado.
 
@@ -133,15 +142,21 @@ def _paginaEmPedacos(base, veiculo, params, pagina, pedaco=10, max_falhas_seguid
     acabaram, ou `max_falhas_seguidas` posts seguidos falharam: visto na Exame,
     em que a partir de certa posição TODA requisição falha). Um post pulado
     não encerra a fatia: a contagem é por posição tentada, não por post
-    devolvido."""
+    devolvido. Com `total` (X-WP-Total), posição depois do último post não é
+    pedida: a Exame responde 502 a ela, o que parecia falha do servidor."""
     posts, lacunas, falhas = [], [], 0
+    fim = total if total is not None else float("inf")
     rotulo = f"'{params['search']}' {params['after'][:10]}"
     primeiro = (pagina - 1) * 100 // pedaco + 1
     for sub in range(primeiro, primeiro + 100 // pedaco):
+        if (sub - 1) * pedaco >= fim:
+            return posts, True, lacunas
         try:
             r = _getWp(base, veiculo, dict(params, per_page=pedaco, page=sub))
         except requests.exceptions.RetryError:
             for um in range((sub - 1) * pedaco + 1, sub * pedaco + 1):
+                if um > fim:
+                    return posts, True, lacunas
                 try:
                     r1 = _getWp(base, veiculo, dict(params, per_page=1, page=um))
                 except requests.exceptions.RetryError:

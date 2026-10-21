@@ -20,7 +20,9 @@ def sondarVeiculos(veiculos=None) -> pd.DataFrame:
         r = {"veiculo": nome, "motor": conf["motor"], "http": None,
              "itens": 0, "tem_corpo": False, "faixa_a": False, "obs": ""}
         try:
-            if conf["motor"].startswith("globo"):
+            if conf["motor"] == "listagem":
+                r["obs"] = f"coletor próprio ({conf['script']}.py), sem sondagem"
+            elif conf["motor"].startswith("globo"):
                 st, js = buscarGlobo("Copom", 0, 3, conf["tenant"], nome)
                 itens = itensDaResposta(js) if st == 200 else []
                 r["http"], r["itens"] = st, len(itens)

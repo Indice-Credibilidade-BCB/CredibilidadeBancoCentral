@@ -77,11 +77,16 @@ VEICULOS = {
     "Poder360":       {"motor": "wordpress", "base": "https://www.poder360.com.br"},
     "InfoMoney":      {"motor": "wordpress", "base": "https://www.infomoney.com.br"},
     "Money Times":    {"motor": "wordpress", "base": "https://www.moneytimes.com.br"},
-    "Agência Brasil": {"motor": "wordpress", "base": "https://agenciabrasil.ebc.com.br"},
+    # Agência Brasil é Drupal (sem API WordPress) e a busca fica em /search/,
+    # proibida no robots.txt: coletor próprio pelas listagens das seções.
+    "Agência Brasil": {"motor": "listagem", "script": "agenciabrasil"},
     # 2026-10-20: arquivo WordPress desde antes de 2011, texto completo na API,
     # robots.txt sem bloqueio a agentes de IA. Bloomberg Línea (desde jul/2021)
     # tem coletor próprio por sitemap: coleta/linea.py.
     "Exame":          {"motor": "wordpress", "base": "https://exame.com"},
+    # 2026-10-20: robots.txt bloqueia só /?s= e /search/ (a API wp-json é
+    # livre) e os robôs de IA pelo nome (GPTBot, CCBot, Google-Extended).
+    "CartaCapital":   {"motor": "wordpress", "base": "https://www.cartacapital.com.br"},
 }
 
 # %% Calendário do Copom e limites de requisição

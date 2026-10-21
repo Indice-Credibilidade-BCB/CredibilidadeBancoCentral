@@ -71,6 +71,12 @@ def coletarTudo(veiculos=None, termos=None, ini=None, fim=None, sondagem=None,
                 resumo.append({"veiculo": nome, **r})
             continue
 
+        if conf["motor"] == "listagem":
+            # coletor próprio (ex.: agenciabrasil.py), retomável por conta própria
+            import importlib
+            importlib.import_module(conf["script"]).coletar()
+            continue
+
         if conf["motor"] == "globo":
             plano = planejar(nome, conf["tenant"], termos, ini, fim, max_prof,
                              usarCache=not replanejar)
