@@ -27,7 +27,11 @@ from scorer import cache_key, load_cfg, parse_json_resposta
 API = "https://generativelanguage.googleapis.com"
 VARIANTE = "producao|real|nenhuma"
 VERSAO = "v1.1"
-MAX_POR_LOTE = 10_000
+# O nível 1 de faturamento limita os tokens em lotes na fila: 10 mil notícias
+# (~10 M tokens) deram 429 ao criar o lote; 5,4 mil passaram. Um lote de 3 mil
+# por vez, e o próximo só quando o anterior termina.
+MAX_POR_LOTE = 3_000
+MAX_EM_VOO = 1
 FINAIS_OK = {"BATCH_STATE_SUCCEEDED", "JOB_STATE_SUCCEEDED"}
 FINAIS_FALHA = {"BATCH_STATE_FAILED", "BATCH_STATE_CANCELLED", "BATCH_STATE_EXPIRED",
                 "JOB_STATE_FAILED", "JOB_STATE_CANCELLED", "JOB_STATE_EXPIRED"}
@@ -143,6 +147,17 @@ def _feitos(out: pathlib.Path) -> set:
     return set(s.loc[ok, "item_id"].astype(str))
 
 
+def _esgotados(out: pathlib.Path, max_tentativas: int = 2) -> set:
+    """Notícias que já voltaram com erro `max_tentativas` vezes: não são reenviadas."""
+    if not out.exists():
+        return set()
+    s = pd.read_json(out, lines=True)
+    if not len(s):
+        return set()
+    n = s[s["erro"].notna()].groupby(s["item_id"].astype(str)).size()
+    return set(n[n >= max_tentativas].index)
+
+
 def pontuar(provider: str, df: pd.DataFrame, out: pathlib.Path) -> dict:
     _carregar_env()
     out = pathlib.Path(out).resolve()
@@ -175,14 +190,22 @@ def pontuar(provider: str, df: pd.DataFrame, out: pathlib.Path) -> dict:
     # 2) envia o que falta (fora de lote em andamento e sem nota válida)
     em_voo = {k for x in lotes if x["status"] == "enviado" and x.get("out", str(out)) == str(out) for k in x["ids"]}
     feitos = _feitos(out)
-    falta = df[~df["item_id"].astype(str).isin(feitos | em_voo)]
-    for ini in range(0, len(falta), MAX_POR_LOTE):
+    falta = df[~df["item_id"].astype(str).isin(feitos | em_voo | _esgotados(out))]
+    vagas = MAX_EM_VOO - sum(1 for x in lotes if x["status"] == "enviado")
+    for ini in range(0, min(len(falta), max(vagas, 0) * MAX_POR_LOTE), MAX_POR_LOTE):
         bloco = falta.iloc[ini:ini + MAX_POR_LOTE]
         linhas = [json.dumps({"key": str(r["item_id"]), "request": requisicao(r, pcfg, req)}, ensure_ascii=False)
                   for r in bloco.to_dict("records")]
         nome = f"credibilidade-{out.stem}-{dt.datetime.now():%Y%m%d-%H%M%S}-{ini}"
         arquivo = _enviar_arquivo(linhas, nome)
-        lotes.append({"nome": _criar_lote(modelo, arquivo, nome), "arquivo": arquivo, "status": "enviado",
+        try:
+            nome_lote = _criar_lote(modelo, arquivo, nome)
+        except RuntimeError as e:
+            if "429" not in str(e):
+                raise
+            print(f"Gemini: cota de lote cheia, fica para a próxima chamada ({str(e)[:80]})")
+            break
+        lotes.append({"nome": nome_lote, "arquivo": arquivo, "status": "enviado",
                       "out": str(out),
                       "enviado_em": dt.datetime.now().isoformat(timespec="seconds"),
                       "ids": bloco["item_id"].astype(str).tolist()})
@@ -190,5 +213,6 @@ def pontuar(provider: str, df: pd.DataFrame, out: pathlib.Path) -> dict:
     em_voo = {k for x in lotes if x["status"] == "enviado" for k in x["ids"]}
     feitos = _feitos(out)
     pedidos = set(df["item_id"].astype(str))
-    return {"pedidos": len(pedidos), "validos": len(pedidos & feitos), "em_lote": len(pedidos & em_voo),
+    return {"pedidos": len(pedidos), "validos": len(pedidos & feitos),
+            "em_lote": len(pedidos & em_voo) or (len(pedidos - feitos) if len(falta) else 0),
             "lotes": [(x["nome"], x["status"], x.get("estado")) for x in lotes[-5:]]}

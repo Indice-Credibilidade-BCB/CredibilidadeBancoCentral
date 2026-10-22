@@ -292,6 +292,31 @@ def etapa_rotear_v2() -> dict:
             "antigas_v1_para_v2": pd.crosstab(troca["decisao_v1"], troca["decisao"]).to_dict()}
 
 
+SAL_AUDITORIA_INCREMENTAL = "auditoria-incremental-2026-10-21|"
+
+
+def etapa_rotear_incremental() -> dict:
+    """Notícias que chegaram depois do treino do filtro único (adendo de
+    2026-10-21 a 4.2.20): o MESMO filtro, congelado, sem retreino. A auditoria
+    das descartadas é sorteada por hash (10%), porque o lote chega aos poucos."""
+    from local_encoder import filtro_sinal
+    r = pd.read_csv(DIR_REF / "roteamento_v2.csv")
+    fora = set(r["item_id"].astype(str)) | _ids_rotulagem()
+    novos = _producao()
+    novos = novos[~novos["item_id"].astype(str).isin(fora)].reset_index(drop=True)
+    if not len(novos):
+        return {"novos": 0}
+    p, limiar = filtro_sinal.prever(novos, DIR_REF / "filtro_v2")
+    aud = novos["item_id"].astype(str).map(lambda i: int(hashlib.sha256((SAL_AUDITORIA_INCREMENTAL + i).encode())
+                                                      .hexdigest()[:15], 16) / 16 ** 15 < FRAC_AUDITORIA)
+    decisao = np.where(p >= limiar, "enviado", np.where(aud, "auditado", "descartado"))
+    out = pd.DataFrame({"item_id": novos["item_id"], "veiculo": novos["veiculo"], "p_sinal": p,
+                        "decisao": decisao, "limiar": limiar, "lote_roteamento": "incremental"})
+    pd.concat([r, out], ignore_index=True).to_csv(DIR_REF / "roteamento_v2.csv", index=False)
+    return {"novos": len(out), **out["decisao"].value_counts().to_dict(),
+            "por_veiculo": out["veiculo"].value_counts().to_dict()}
+
+
 def etapa_pontuar_v2(provider: str, lote: bool = False) -> dict:
     r = _roteamento()
     ids = set(r.loc[r["decisao"].isin(["enviado", "auditado"]), "item_id"].astype(str))
@@ -464,7 +489,8 @@ if __name__ == "__main__":
         sys.stdout.reconfigure(encoding="utf-8")
     ap = argparse.ArgumentParser()
     ap.add_argument("etapa", choices=["rotulagem", "rotulagem_nova", "filtro", "rotear", "pontuar", "vmin",
-                                      "filtro_v2", "rotear_v2", "pontuar_v2", "vmin_v2", "consolidar", "tudo"])
+                                      "filtro_v2", "rotear_v2", "rotear_incremental", "pontuar_v2", "vmin_v2",
+                                      "consolidar", "tudo"])
     ap.add_argument("--lote", action="store_true", help="Gemini: Batch API (50% mais barato, até 24 h)")
     ap.add_argument("--provider", default="sabia")
     ap.add_argument("--n-rotulagem", type=int, default=N_ROTULAGEM)
@@ -486,6 +512,8 @@ if __name__ == "__main__":
             r = etapa_filtro_v2()
         elif e == "rotear_v2":
             r = etapa_rotear_v2()
+        elif e == "rotear_incremental":
+            r = etapa_rotear_incremental()
         elif e == "pontuar_v2":
             r = etapa_pontuar_v2(a.provider, a.lote)
         elif e == "vmin_v2":

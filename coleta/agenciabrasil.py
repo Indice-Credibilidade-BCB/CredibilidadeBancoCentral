@@ -1,6 +1,6 @@
 # %% Agência Brasil — coleta pelas listagens das seções
 
-"""Agência Brasil (EBC), pelas páginas de listagem das seções.
+"""Agência Brasil (EBC), pelas páginas de listagem da seção Economia.
 
 A busca do site fica em /search/, proibida no robots.txt; o sitemap só cobre
 2014–2020. As listagens (/economia?page=N, da mais nova para a mais antiga)
@@ -37,7 +37,7 @@ from utilitarios import casaTermo, log
 
 VEICULO = "Agência Brasil"
 BASE = "https://agenciabrasil.ebc.com.br"
-SECOES = ("economia", "politica")
+SECOES = ("economia",)  # Política fora por prazo (2026-10-21): cerca de um dia a mais de listagem
 PAUSA = 10.0  # Crawl-delay do robots.txt
 RX_LINK = re.compile(r'href="(?:https?://agenciabrasil\.ebc\.com\.br)?(/([a-z-]+)/noticia/(\d{4})-(\d{2})/[a-z0-9-]+)"')
 
