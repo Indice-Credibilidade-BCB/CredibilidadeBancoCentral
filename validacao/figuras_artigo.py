@@ -323,7 +323,7 @@ def fig_vazamento() -> None:
     ax.tick_params(axis="y", length=0)
     for s in ("top", "right", "left"):
         ax.spines[s].set_visible(False)
-    ax.set_title("Notas com a data e os nomes escondidos (V-min) contra as notas com o texto inteiro (V-max)")
+    ax.set_title("Mudança da nota ao esconder a data ou os nomes, contra a surpresa inflacionária futura")
     fig.text(0.01, -0.1, "Bateria v1.1, Sabiá, 150 notícias estratificadas por episódio. "
              "T3-L4 é significativo a 5%, mas apoiado em 2 notícias e abaixo do limite do critério.",
              fontsize=7, color=TINTA2)

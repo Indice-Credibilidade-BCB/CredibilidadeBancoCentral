@@ -192,8 +192,11 @@ def _pontuar_individual(provider: str, df: pd.DataFrame, out: pathlib.Path,
                "--prompt-versao", "v1.1", "--anonimizacao", anonimizacao,
                "--input", str(parte), "--out", str(pasta / f"parte_{k}.jsonl")]
         env = dict(os.environ, SCORER_N_PROC=str(n_proc), SCORER_PROC_ID=str(k))
+        # Sem janela de console no Windows: uma janela fechada ou um Ctrl+C
+        # derrubava todos os processos da pontuação (visto em 2026-10-22).
         procs.append(subprocess.Popen(cmd, cwd=ROOT, stdout=(pasta / f"log_{k}.txt").open("a"),
-                                      stderr=subprocess.STDOUT, env=env))
+                                      stderr=subprocess.STDOUT, env=env,
+                                      creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0)))
     for pr in procs:
         pr.wait()
     linhas = []

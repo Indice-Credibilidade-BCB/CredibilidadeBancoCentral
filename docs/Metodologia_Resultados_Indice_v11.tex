@@ -40,21 +40,19 @@
   \vspace{0.8em}
   {\large Metodologia e resultados do índice v1.1 com o corpus ampliado\par}
   \vspace{1.2em}
-  Versão de 22 de outubro de 2026 --- \textbf{antes do V-min completo}\par
+  Versão de 22 de outubro de 2026, com o V-min completo\par
   \vspace{0.6em}
 \end{center}
 \hrule
 \vspace{1em}
 
 \noindent\colorbox{fundo}{\parbox{\dimexpr\textwidth-2\fboxsep}{\small
-\textbf{Estado desta versão.} Todos os resultados abaixo usam o corpus final
-(11 veículos, 2011--2026), o pré-filtro retreinado e as notas completas do Sabiá
-e do Gemini. A única parte provisória é a banda de vazamento V-max/V-min
-(Seção~\ref{sec:vazamento}), que ainda usa a amostra aleatória de 9 mil notícias
-da produção anterior. O V-min de todas as notícias com sinal está rodando; a
-próxima versão deste documento substitui a Seção~\ref{sec:vazamento} e as
-figuras correspondentes. Os critérios de aprovação foram registrados antes de
-rodar (contexto do projeto, seções 4.2.17 e 4.2.20).}}
+\textbf{Estado desta versão.} Todos os resultados usam o corpus final
+(11 veículos, 2011--2026), o pré-filtro retreinado, as notas completas do Sabiá
+e do Gemini e o V-min de todas as notícias com sinal. Em relação à versão
+anterior (mesmo dia), muda só a banda de vazamento (Seção~\ref{sec:banda}):
+séries, robustez, validação e eventos são idênticos. Os critérios de aprovação
+foram registrados antes de rodar (contexto do projeto, seções 4.2.17 e 4.2.20).}}
 
 \section{Pergunta e conceito}
 
@@ -331,7 +329,7 @@ Teste & Resultado & Veredito \\
 T0 (datar o texto, L1--L5) & o modelo data o texto mesmo mascarado (erro de 1,6 a 3,3 anos) & reprova \\
 T2 (data omitida/trocada) & nota muda em 3--4\% das notícias; $\rho$ com a surpresa futura $\le 0{,}10$ ($p\ge 0{,}24$) & passa \\
 T3 (anonimização L1--L4) & muda em 1--5\%; L4 com $\rho=0{,}20$ ($p=0{,}02$) apoiado em 2 notícias & passa, frágil \\
-T4 (resíduo V-max sobre V-min) & coeficiente $-0{,}001$ ($p=0{,}68$) & passa \\
+T4 (resíduo V-max sobre V-min) & coeficiente $0{,}010$ ($p=0{,}34$), 176 meses, 12.014 notícias; $\rho$ por notícia 0,05 & passa \\
 T5 (pares sintéticos) & diferença pareada 0,00 & passa \\
 T6 (encoder local, pós-2019) & correlação BERTimbau $\times$ Sabiá 0,94 antes e depois de 2019 & sem sinal \\
 \bottomrule
@@ -342,23 +340,47 @@ T6 (encoder local, pós-2019) & correlação BERTimbau $\times$ Sabiá 0,94 ante
 texto, mas omitir, trocar ou mascarar a data e os identificadores quase não
 muda a nota, e o que muda não se correlaciona com o desfecho futuro (T2--T5).
 
-\subsection{Banda V-max/V-min (provisória)}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{fig06_vazamento.pdf}
+  \caption{T2 e T3: correlação entre a mudança da nota, ao esconder a data ou
+  os nomes, e a surpresa inflacionária futura (bateria v1.1, Sabiá).}
+\end{figure}
+
+\subsection{Banda V-max/V-min}\label{sec:banda}
 
 A V-min repontua as notícias no nível L5 (sem números, nomes, termos de época
 e veículo). Ela é reportada como \emph{limite inferior} da informação do
 índice, não como veto: o L5 retira também os números de inflação, que são
-evidência legítima da D1. \textbf{Nesta versão}, a banda usa a amostra
-aleatória de 9 mil notícias do corpus original (cerca de 7 notícias com sinal
-por mês): correlação mensal V-max $\times$ V-min de 0,80 em 175 meses e
-$\Delta_t$ médio de $+0{,}014$ (desvio de 0,10). A próxima versão usa o V-min
-de todas as notícias com sinal (registro 4.2.20), com precisão muito maior.
+evidência legítima da D1. Pelo registro 4.2.20, a V-min cobre a amostra
+aleatória de 9 mil notícias e \textbf{todas as notícias com sinal no V-max}
+(21.576 notícias; 12.283 com sinal na V-min).
 
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=\textwidth]{fig06_vazamento.pdf}
-  \caption{Notas com a data e os nomes escondidos (V-min) contra o texto
-  inteiro (V-max). Provisória: amostra de 9 mil notícias.}
-\end{figure}
+\begin{table}[H]
+\centering\small
+\caption{Banda V-max/V-min (Sabiá, mensal).}\label{tab:banda}
+\begin{tabular}{@{}lc@{}}
+\toprule
+Correlação mensal V-max $\times$ V-min & 0,956 (189 meses) \\
+Notícias com sinal por mês na V-min (mediana) & 53 \\
+$\Delta_t=\hat C^{V\text{-}max}_t-\hat C^{V\text{-}min}_t$, média (desvio) & $-0{,}013$ (0,041) \\
+Mesma nota D1 nas duas variantes & 84\% das notícias \\
+\emph{Encompassing} da V-min sem rival & $b_1=0{,}33$ ($p=0{,}003$) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent Com o texto mascarado, o índice quase não muda: correlação de 0,956
+e diferença média de $-0{,}013$. Por ano, $\Delta_t$ fica entre $-0{,}05$
+(2016 e 2025) e $+0{,}04$ (2020), sem tendência: positivo em 2017--2020 e
+negativo no resto. O sinal acompanha a era, o que é compatível com um prior de
+época, mas também com a perda dos números de inflação no L5, que puxa a nota
+para o meio da escala. O T4 separa as duas leituras: o resíduo da V-max dada a
+V-min não se correlaciona com a surpresa futura. A V-min também passa pela
+validação: sozinha, explica o latente do Kalman ($b_1=0{,}33$, $p=0{,}003$) e
+sobrevive a 4 dos 9 rivais, contra 5 da V-max. Na amostra anterior de 9 mil
+notícias (cerca de 7 com sinal por mês), a correlação era de 0,80; a diferença
+vem do tamanho da amostra, não do índice.
 
 \section{Validação: validade de construto}\label{sec:validacao}
 
@@ -505,7 +527,10 @@ estouro da meta de 2022.
   pré-filtro pelas palavras do endereço; matérias cujo endereço não traz os
   termos escapam.
   \item \textbf{Vazamento.} O modelo data o texto (T0). A evidência de que a
-  nota não usa o futuro vem de T2--T5; a banda V-min desta versão é imprecisa.
+  nota não usa o futuro vem de T2--T5 e da banda V-max/V-min; a V-min cobre só
+  as notícias com sinal no V-max e a amostra aleatória, de modo que o efeito
+  do vazamento sobre a \emph{taxa} de sinal é medido só na amostra de 9 mil
+  (14,7\% para 15,4\%).
   \item \textbf{Âncoras.} A inflação implícita contém prêmios de risco e de
   liquidez; o EMBI+ e o CDS carregam risco fiscal e global.
   \item \textbf{Quarentena congelada tarde.} O manifesto foi gerado depois de
@@ -514,9 +539,10 @@ estouro da meta de 2022.
 
 \section{Custo e reprodução}
 
-As chamadas desta rodada (fontes novas, filtro único, Sabiá individual e Gemini
-em lote) custaram cerca de R\$~50, estimados pelas chamadas registradas
-(23.819 no Sabiá, 23.818 no Gemini em lote); o V-min acrescenta cerca de R\$~10.
+As chamadas desta rodada (fontes novas, filtro único, V-min, Sabiá individual
+e Gemini em lote) custaram cerca de R\$~64, estimados pelas chamadas
+registradas (36.395 no Sabiá e 23.818 no Gemini em lote), dentro da verba de
+R\$~150.
 O código e as séries estão no repositório; a sequência é
 \texttt{coleta/} $\to$ \texttt{llm/corpus/from\_coleta.py} $\to$
 \texttt{llm/producao\_v11.py} (rotulagem, filtro, roteamento, pontuação,
